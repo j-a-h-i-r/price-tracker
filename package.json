@@ -8,8 +8,10 @@
   },
   "scripts": {
     "start:dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start:debug": "tsnd --inspect --respawn --transpile-only src/index.ts",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "migrate": "knex migrate:latest"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +26,10 @@
     "typescript": "^4.5.4"
   },
   "dependencies": {
-    "cheerio": "^1.0.0-rc.10"
+    "axios": "^0.24.0",
+    "cheerio": "^1.0.0-rc.10",
+    "dotenv": "^10.0.0",
+    "knex": "^0.95.14",
+    "pg": "^8.7.1"
   }
 }
