@@ -1,10 +1,13 @@
 export interface Gpu {
+    id?: number
     name: string
     slug: string
-    link: string
+    url: string
 }
 
-export interface GpuPrice extends Gpu {
+export interface GpuWithPrice extends Gpu {
     price: number
     isAvailable: boolean
 }
+
+export type ExceptId <T> = Omit<T, "id">;

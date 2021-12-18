@@ -1,5 +1,7 @@
-import { parseProducts } from './startech';
+import { setupTasks } from "./cron";
+import { scrapeAndSaveGpuPrices } from "./startech/cron";
 
 if (require.main === module) {
-    parseProducts();
+    // setupTasks();
+    scrapeAndSaveGpuPrices();
 }

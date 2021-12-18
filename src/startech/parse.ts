@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { GpuPrice } from '../types';
+import { GpuWithPrice } from '../types';
 
 function parsePageCount(listingHtml: string): number {
     const $ = cheerio.load(listingHtml);
@@ -20,7 +20,7 @@ function parseListingPage(html: string): string[] {
     return divs;
 }
 
-function parseCardDiv(cardHtml: string): GpuPrice {
+function parseCardDiv(cardHtml: string): GpuWithPrice {
     const $ = cheerio.load(cardHtml);
 
     const itemName = $("h4[class='p-item-name']").text().trim();
@@ -35,7 +35,7 @@ function parseCardDiv(cardHtml: string): GpuPrice {
         name: itemName,
         price: itemPrice,
         isAvailable: itemAvailabilityStatus,
-        link: itemLink,
+        url: itemLink,
         slug: slug,
     }
 }

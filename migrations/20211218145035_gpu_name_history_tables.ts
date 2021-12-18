@@ -4,10 +4,11 @@ export async function up(knex: Knex): Promise<void> {
     return knex.schema
     .createTable("gpus", (table) => {
         table.increments("id");
-        table.string("name");
-        table.string("url");
-        table.string("slug").index("gpu_url_slug");
-        table.string("website");
+        table.text("name");
+        table.text("url");
+        table.text("slug");
+        table.text("website");
+        table.unique(["slug", "website"], "gpu_url_slug");
     })
     .createTable("gpu_prices", (table) => {
         table.increments("id");

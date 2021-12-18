@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "start:dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start:dev": "ts-node-dev --respawn --transpile-only --require dotenv/config -- src/index.ts",
     "start:debug": "tsnd --inspect --respawn --transpile-only src/index.ts",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@types/cheerio": "^0.22.30",
     "@types/jest": "^27.0.3",
+    "@types/node-cron": "^3.0.0",
     "jest": "^27.4.5",
     "ts-jest": "^27.1.2",
     "ts-node": "^10.4.0",
@@ -30,6 +31,7 @@
     "cheerio": "^1.0.0-rc.10",
     "dotenv": "^10.0.0",
     "knex": "^0.95.14",
+    "node-cron": "^3.0.0",
     "pg": "^8.7.1"
   }
 }
