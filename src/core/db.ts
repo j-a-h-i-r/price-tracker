@@ -6,5 +6,6 @@ export const knex = Knex({
     pool: {
         min: 2,
         max: 50,
-    }
+    },
+    debug: true,
 })
