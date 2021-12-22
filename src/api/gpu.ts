@@ -24,6 +24,46 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         return sendEmailOnGpuPriceAvailablityChange();
     })
 
+    // Register new alerts
+    fastify.post("/:gpuid/subscriptions", async (req: FastifyRequest<{ Body: { email: string }, Params: { gpuid: string } }>, res) => {
+        const idParam = req.params.gpuid;
+        const gpuId = Number(idParam);
+        if (!gpuId) {
+            return res.status(400).send({ message: `GPU id (${idParam}) is not valid` });
+        }
+
+        const email = req.body?.email;
+        console.log("email", email);
+        if (!email) {
+            return res.status(400).send({ message: `email is required` });
+        }
+
+        await gpuService.savePendingEmail(email, gpuId);
+        return { message: `Check your email (${email}) for a verification code` }
+    })
+
+    // Verify pending alert
+    // @TODO: Add request limit/delay
+    fastify.patch("/:gpuid/subscriptions", async (req: FastifyRequest<{ Body: { email: string, code: string }, Params: { gpuid: string } }>, res) => {
+        const idParam = req.params.gpuid;
+        const gpuId = Number(idParam);
+        if (!gpuId) {
+            return res.status(400).send({ message: `GPU id (${idParam}) is not valid` });
+        }
+
+        const { email, code } = req.body;
+        if (!email || !code) {
+            return res.status(400).send({ message: "email and code are required " });
+        }
+
+        const isVerified = await gpuService.handleEmailVerification(email, code, gpuId);
+        if (!isVerified) {
+            return res.status(400).send({ message: "Email could not be verified" });
+        }
+
+        return { message: "Success" }
+    })
+
     fastify.get("/:id", async (req: FastifyRequest<{ Params: { id: string } }>, res) => {
         const idParam = req.params.id;
         const gpuId = Number(idParam);

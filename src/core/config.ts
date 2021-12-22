@@ -1,4 +1,5 @@
 const config = {
+    databaseUrl: process.env.DATABASE_URL,
     mail: {
         host: process.env.MAIL_HOST,
         port: Number(process.env.MAIL_PORT),

@@ -9,13 +9,13 @@ module.exports = {
 
   development: {
     client: "postgresql",
-    connection: process.env.DB_URL,
+    connection: process.env.DATABASE_URL,
 
   },
 
   staging: {
     client: "postgresql",
-    connection: process.env.DB_URL,
+    connection: process.env.DATABASE_URL,
     pool: {
       min: 2,
       max: 10

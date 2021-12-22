@@ -4,7 +4,7 @@ import { setupServer } from "./server";
 
 if (require.main === module) {
     // setupTasks();
-    // scrapeAndSaveGpuPrices();
+    scrapeAndSaveGpuPrices();
 
     setupServer()
     .then(() => {

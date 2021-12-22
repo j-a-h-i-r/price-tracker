@@ -1,8 +1,9 @@
 import Knex from 'knex';
+import config from "./config";
 
 export const knex = Knex({
     client: "postgres",
-    connection: process.env.DB_URL,
+    connection: config.databaseUrl,
     pool: {
         min: 2,
         max: 50,

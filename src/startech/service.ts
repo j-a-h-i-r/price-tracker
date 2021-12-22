@@ -1,6 +1,9 @@
+import dayjs from "dayjs";
 import * as gpuStorage from "./storage";
 import type { Gpu, GpuWithPrice } from "../types";
 import type * as dbTypes from "../types/db";
+import * as util from "../core/util";
+import emailer from "../core/email";
 
 export async function getGpus(filter: any) {
     return gpuStorage.retrieveGpus(filter);
@@ -119,4 +122,80 @@ function augmentGpuPricesWithId(gpus: Gpu[], gpusWithPrice: GpuWithPrice[]): dbT
         }
     })
     return augmented;
+}
+
+export async function savePendingEmail(email: string, gpuId: number) {
+    const verificationCode = await util.generate6DigitCode();
+    await gpuStorage.savePendingEmail(email, gpuId, verificationCode);
+    return sendVerificationEmail(email, verificationCode);
+}
+
+export async function getPendingEmailInfo(email: string) {
+    const result = await gpuStorage.retrievePendingEmail(email);
+    if (!result || result.length !== 1) {
+        return null;
+    }
+
+    return result[0];
+}
+
+export async function verifyPendingEmailCode(email: string, code: string) {
+    const pendingEmail = await getPendingEmailInfo(email);
+    console.log(pendingEmail)
+    if (!pendingEmail) return false;
+
+    const { verification_code, created_at } = pendingEmail;
+    if (verification_code !== code) return false;
+
+    const secondsElapsed = dayjs().diff(created_at, "seconds");
+    console.log(secondsElapsed)
+    if (secondsElapsed > 60 * 10) return false;
+    
+    return true;
+}
+
+export async function handleEmailVerification(email: string, code: string, gpuId: number) {
+    const verified = await verifyPendingEmailCode(email, code);
+    if (!verified) return false;
+
+    const existingEmail = await gpuStorage.retrieveSubscriber(email);
+    let emailId;
+    if (!existingEmail || existingEmail.length !== 1) {
+        // save email
+        const authCode = await util.generateAuthCode();
+        const saved = await gpuStorage.saveSubscribedEmail(email, authCode);
+        emailId = saved[0].id;
+
+        await sendAuthCodeEmail(email, authCode);
+    } else {
+        emailId = existingEmail[0].id;
+    }
+
+    await gpuStorage.saveGpuSubscription(emailId, gpuId);
+    await gpuStorage.removePendingEmail(email, gpuId);
+    return true;
+}
+
+async function sendAuthCodeEmail(email: string, authCode: string) {
+    return emailer.send({
+        template: "auth-code",
+        message: {
+            to: email,
+        },
+        locals: {
+            authCode: authCode,
+        }
+    })
+}
+
+async function sendVerificationEmail(email: string, verificationCode: string) {
+    return emailer.send({
+        template: "verification-code",
+        message: {
+            to: email,
+        },
+        locals: {
+            verificationCode: verificationCode,
+        }
+    })
 }
