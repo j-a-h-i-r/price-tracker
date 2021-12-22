@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+import logger from "./core/logger";
 
 class ParseEvent {
     private readonly eventName = "parse-done";
@@ -8,7 +9,7 @@ class ParseEvent {
     }
 
     notify() {
-        console.log("Notify called");
+        logger.info("Notify called");
         this.event.emit(this.eventName);
     }
 

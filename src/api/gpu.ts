@@ -33,7 +33,6 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         }
 
         const email = req.body?.email;
-        console.log("email", email);
         if (!email) {
             return res.status(400).send({ message: `email is required` });
         }

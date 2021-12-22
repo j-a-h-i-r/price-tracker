@@ -1,5 +1,6 @@
 import Fastify from "fastify";
-import routes from "./api"
+import routes from "./api";
+import logger from "./core/logger";
 
 export async function setupServer() {
     const server = Fastify({
@@ -11,8 +12,8 @@ export async function setupServer() {
     try {
         await server.listen(3000);
     } catch (err) {
-        console.error("Server failed to start");
-        console.error(err);
+        logger.error("Server failed to start");
+        logger.error(err);
 
         server.log.error(err);
         process.exit(1);

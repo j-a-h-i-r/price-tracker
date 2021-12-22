@@ -1,6 +1,7 @@
 import { setupTasks } from "./cron";
 import { scrapeAndSaveGpuPrices } from "./startech/cron";
 import { setupServer } from "./server";
+import logger from "./core/logger"
 
 if (require.main === module) {
     // setupTasks();
@@ -8,9 +9,9 @@ if (require.main === module) {
 
     setupServer()
     .then(() => {
-        console.log("Server running")
+        logger.info("Server running")
     })
     .catch(() => {
-        console.error("Failed to run server");
+        logger.error("Failed to run server");
     })
 }

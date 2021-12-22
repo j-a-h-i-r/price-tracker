@@ -141,14 +141,12 @@ export async function getPendingEmailInfo(email: string) {
 
 export async function verifyPendingEmailCode(email: string, code: string) {
     const pendingEmail = await getPendingEmailInfo(email);
-    console.log(pendingEmail)
     if (!pendingEmail) return false;
 
     const { verification_code, created_at } = pendingEmail;
     if (verification_code !== code) return false;
 
     const secondsElapsed = dayjs().diff(created_at, "seconds");
-    console.log(secondsElapsed)
     if (secondsElapsed > 60 * 10) return false;
     
     return true;

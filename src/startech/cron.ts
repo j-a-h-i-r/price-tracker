@@ -1,6 +1,7 @@
 import { getLatestGpuChanges, getGpuEmailSubscribers } from "./service";
 import { parseEvent } from "../events"
 import emailer from "../core/email";
+import logger from "../core/logger";
 
 export async function scrapeAndSaveGpuPrices() {
     try {
@@ -14,8 +15,8 @@ export async function scrapeAndSaveGpuPrices() {
         // console.log("GPU prices saved to DB");
         parseEvent.notify();
     } catch (err) {
-        console.error("Failed to parse/store GPUs in DB");
-        console.error(err);
+        logger.error("Failed to parse/store GPUs in DB");
+        logger.error(err);
     }
 }
 
@@ -49,8 +50,8 @@ export async function sendEmailOnGpuPriceAvailablityChange() {
                     isAvailable
                 }
             })
-            .then((x) => console.log(x))
-            .catch((e) => console.error(e))
+            .then((x) => logger.info(x))
+            .catch((e) => logger.error(e))
 
         })
 
