@@ -12,3 +12,23 @@ export interface Gpus {
     slug: string
     website: string
 }
+
+export interface PriceChange {
+    id: number
+    is_available: boolean
+    price: number
+    updated_at: Date
+}
+
+export interface GpuPriceChange {
+    gpuid: number
+    changes: PriceChange[]
+}
+
+export interface GpuEmailSubscriberDetailed {
+    gpuid: number
+    emailid: number
+    email: string
+    name: string
+    url: string
+}

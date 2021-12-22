@@ -4,6 +4,8 @@ import type * as dbTypes from '../types/db';
 
 const GPUS_TABLE = "gpus";
 const GPU_PRICES_TABLES = "gpu_prices";
+const GPU_SUBSCRIPTION_TABLE = "subscribed_gpus";
+const EMAIL_SUBSCRIBERS_TABLE = "subscribed_emails";
 
 export async function retrieveGpus(filter?: {
     name: string,
@@ -38,6 +40,35 @@ export async function retrieveGpuPrices(gpuId: number) {
         .select()
         .where({ gpuid: gpuId })
         .orderBy("updated_at", "desc");
+}
+
+export async function retrieveLatestGpuPriceChanges(): Promise<dbTypes.GpuPriceChange[]> {
+    const gpuIdRef = knex.ref(`gp.gpuid`);
+    return knex<dbTypes.GpuPrices>({gp: GPU_PRICES_TABLES})
+    .select("gpuid")
+    .select(
+        knex
+        .select(knex.raw("json_agg(item)"))
+        .from(
+            knex<dbTypes.GpuPrices>(GPU_PRICES_TABLES)
+            .select("id", "is_available", "price", "updated_at")
+            .where("gpuid", gpuIdRef)
+            .orderBy("updated_at", "desc")
+            .limit(2)
+            .as("item")
+        )
+        .as("changes")
+    )
+    .groupBy("gpuid")
+}
+
+export async function retrieveGpuDetailsWithEmailSubcribers(gpuIds: number[]): Promise<dbTypes.GpuEmailSubscriberDetailed[]> {
+    return knex
+    .select("gpuid", "emailid", "email", "name", "url")
+    .from(GPU_SUBSCRIPTION_TABLE)
+    .innerJoin(EMAIL_SUBSCRIBERS_TABLE, `${EMAIL_SUBSCRIBERS_TABLE}.id`, "=", `${GPU_SUBSCRIPTION_TABLE}.emailid`)
+    .innerJoin(GPUS_TABLE, `${GPUS_TABLE}.id`, "=", `${GPU_SUBSCRIPTION_TABLE}.gpuid`)
+    .whereIn(`${GPU_SUBSCRIPTION_TABLE}.gpuid`, gpuIds);
 }
 
 export async function saveOrUpdateGpus(gpus: ExceptId<dbTypes.Gpus>[]): Promise<Gpu[]> {
