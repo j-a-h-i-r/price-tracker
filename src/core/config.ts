@@ -1,5 +1,9 @@
+const NODE_ENV = process.env.NODE_ENV;
+const isProduction = NODE_ENV === "production";
+
 const config = {
     databaseUrl: process.env.DATABASE_URL,
+    isProduction: isProduction,
     mail: {
         host: process.env.MAIL_HOST,
         port: Number(process.env.MAIL_PORT),

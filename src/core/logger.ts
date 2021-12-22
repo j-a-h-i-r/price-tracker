@@ -1,13 +1,13 @@
 import pino from "pino";
+import config from "./config";
 
-const { NODE_ENV } = process.env;
-const DEFAULT_LOG_LEVEL = NODE_ENV === 'production' ? 'info' : 'debug';
+const DEFAULT_LOG_LEVEL = config.isProduction ? 'info' : 'debug';
 const LOG_LEVEL = process.env.LOG_LEVEL || DEFAULT_LOG_LEVEL;
 
 export const logger = pino({
     level: LOG_LEVEL,
     enabled: true,
-    prettyPrint: NODE_ENV === 'production'
+    prettyPrint: config.isProduction
         ? false
         : {
             levelFirst: true,

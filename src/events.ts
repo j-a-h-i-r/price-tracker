@@ -9,7 +9,6 @@ class ParseEvent {
     }
 
     notify() {
-        logger.info("Notify called");
         this.event.emit(this.eventName);
     }
 
