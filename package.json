@@ -8,14 +8,14 @@
   },
   "scripts": {
     "prestart": "npm run migrate:prod",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "start:dev": "cross-env NODE_ENV=development ts-node-dev --respawn --transpile-only --require dotenv/config -- src/index.ts",
     "start:debug": "tsnd --inspect --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "test": "jest",
     "test:watch": "jest --watch",
     "migrate": "knex migrate:latest",
-    "migrate:prod": "knex --knexfile dist/knexfile.js --env production migrate:latest"
+    "migrate:prod": "knex --cwd dist --env production migrate:latest"
   },
   "keywords": [],
   "author": "",
