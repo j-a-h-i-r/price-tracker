@@ -10,7 +10,8 @@ export async function setupServer() {
     server.register(routes, { prefix: "/api" });
 
     try {
-        await server.listen(3000);
+        const PORT = process.env.PORT ?? 3000;
+        await server.listen(PORT);
     } catch (err) {
         logger.error("Server failed to start");
         logger.error(err);
