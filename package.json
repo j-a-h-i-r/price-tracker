@@ -1,8 +1,12 @@
 {
   "name": "gpu-price",
   "version": "1.0.0",
-  "description": "",
+  "description": "Scripts for getting alerts on GPU price or availability changes",
+  "private": true,
   "main": "index.js",
+  "engines": {
+    "node": ">=14"
+  },
   "directories": {
     "test": "test"
   },
@@ -11,7 +15,10 @@
     "start": "node dist/src/index.js",
     "start:dev": "cross-env NODE_ENV=development ts-node-dev --respawn --transpile-only --require dotenv/config -- src/index.ts",
     "start:debug": "tsnd --inspect --respawn --transpile-only src/index.ts",
-    "build": "tsc",
+    "clean": "rimraf dist/",
+    "compile": "tsc",
+    "copy-files": "copyfiles emails/** dist",
+    "build": "npm-run-all clean compile copy-files",
     "test": "jest",
     "test:watch": "jest --watch",
     "migrate": "knex migrate:latest",
@@ -26,7 +33,10 @@
     "@types/jest": "^27.0.3",
     "@types/node": "^17.0.2",
     "@types/node-cron": "^3.0.0",
+    "copyfiles": "^2.4.1",
     "jest": "^27.4.5",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.2",
     "ts-jest": "^27.1.2",
     "ts-node": "^10.4.0",
     "ts-node-dev": "^1.1.8",

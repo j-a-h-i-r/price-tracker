@@ -4,6 +4,7 @@ const isProduction = NODE_ENV === "production";
 const config = {
     databaseUrl: process.env.DATABASE_URL,
     isProduction: isProduction,
+    scrapeHourInterval: Number(process.env.SCRAPE_HOUR_INTERVAL) ?? 2,
     mail: {
         host: process.env.MAIL_HOST,
         port: Number(process.env.MAIL_PORT),

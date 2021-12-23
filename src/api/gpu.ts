@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import * as gpuService from "../startech/service";
-// import { sendEmailOnGpuPriceAvailablityChange } from "../startech/cron"
+import { sendEmailOnGpuPriceAvailablityChange } from "../startech/events"
 
 type GpuQuery = { name?: string, url?: string, slug?: string, website?: string };
 
@@ -20,9 +20,9 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         return emails;
     })
 
-    // fastify.post("/alert", async (req, res) => {
-    //     return sendEmailOnGpuPriceAvailablityChange();
-    // })
+    fastify.post("/alert", async (req, res) => {
+        return sendEmailOnGpuPriceAvailablityChange();
+    })
 
     // Register new alerts
     fastify.post("/:gpuid/subscriptions", async (req: FastifyRequest<{ Body: { email: string }, Params: { gpuid: string } }>, res) => {

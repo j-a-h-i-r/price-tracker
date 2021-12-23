@@ -1,11 +1,12 @@
 import cron from "node-cron";
 import { scrapeAndSaveGpuPrices } from "./startech/cron";
 import logger from "./core/logger";
+import config from "./core/config";
 
-/**
- * Run it every six hours
- */
-const task = cron.schedule("0 */6 * * *", () => {
+const cronScheduleString = `0 */${config.scrapeHourInterval} * * *`;
+logger.info("Cron Schedule %s", cronScheduleString);
+
+const task = cron.schedule(cronScheduleString, () => {
     logger.info("Running cron for scraping and saving GPU prices");
     
     scrapeAndSaveGpuPrices()

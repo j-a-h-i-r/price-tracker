@@ -10,13 +10,13 @@ export async function scrapeAndSaveGpuPrices() {
         logger.info("Starting GPU scraping. Time:", timeNow);
 
         const parsedGpus = await parseProducts();
-        console.log(`Scraped ${parsedGpus.length} GPUs`);
+        logger.info(`Scraped ${parsedGpus.length} GPUs`);
     
         const storedGpus = await saveGpus(parsedGpus);
-        console.log("Scraped GPUs saved to DB");
+        logger.info("Scraped GPUs saved to DB");
     
         const storedGpuPrices = await saveGpuPrices(parsedGpus);
-        console.log("GPU prices saved to DB");
+        logger.info("GPU prices saved to DB");
 
         parseEvent.notify();
     } catch (err) {

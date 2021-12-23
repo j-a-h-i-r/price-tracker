@@ -3,7 +3,7 @@ import logger from "../core/logger";
 import { parseEvent } from "../events";
 import { getGpuEmailSubscribers, getLatestGpuChanges } from "./service";
 
-async function sendEmailOnGpuPriceAvailablityChange() {
+export async function sendEmailOnGpuPriceAvailablityChange() {
     try {
         logger.info("Preparing to send email on GPU price/availability changes!");
 
