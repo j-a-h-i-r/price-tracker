@@ -29,6 +29,9 @@ module.exports = {
       min: 2,
       max: 25
     },
+    migrations: {
+      extension: "js",
+    }
   }
 
 };
