@@ -7,8 +7,12 @@
     "test": "test"
   },
   "scripts": {
+    "prestart": "npm run migrate",
+    "start": "node dist/index.js",
     "start:dev": "cross-env NODE_ENV=development ts-node-dev --respawn --transpile-only --require dotenv/config -- src/index.ts",
     "start:debug": "tsnd --inspect --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "postinstall": "npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "migrate": "knex migrate:latest"
