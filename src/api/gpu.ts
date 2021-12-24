@@ -21,7 +21,8 @@ export default async function routes(fastify: FastifyInstance, options: any) {
     })
 
     fastify.post("/alert", async (req, res) => {
-        return sendEmailOnGpuPriceAvailablityChange();
+        await sendEmailOnGpuPriceAvailablityChange();
+        return true;
     })
 
     // Register new alerts

@@ -16,6 +16,8 @@ const task = cron.schedule(cronScheduleString, () => {
     .catch(() => {
         logger.error("Error while scraping and saving GPU prices");
     })
+}, {
+    scheduled: false,
 })
 
 export function setupTasks() {

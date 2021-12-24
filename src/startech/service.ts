@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import * as gpuStorage from "./storage";
-import type { Gpu, GpuWithPrice } from "../types";
+import type { Gpu, GpuPriceChange, GpuWithPrice } from "../types";
 import type * as dbTypes from "../types/db";
 import * as util from "../core/util";
 import emailer from "../core/email";
@@ -52,7 +52,7 @@ function checkIfPriceChanged(changes: dbTypes.PriceChange[]) {
     return hasPriceChanged;
 }
 
-export async function getLatestGpuChanges() {
+export async function getLatestGpuChanges(): Promise<GpuPriceChange[]> {
     const latestUpdates = await gpuStorage.retrieveLatestGpuPriceChanges();
 
     const updatesWithChanges = latestUpdates.filter((gpu) => {
@@ -69,10 +69,12 @@ export async function getLatestGpuChanges() {
     const updatesFormatted = updatesWithChanges.map((gpu) => {
         const isAvailable = gpu.changes[0].is_available;
         const lastPrice = gpu.changes[0].price;
+        const previousPrice = gpu.changes[1].price;
 
         return {
             isAvailable: isAvailable,
             lastPrice: lastPrice,
+            previousPrice: previousPrice,
             hasPriceChanged: checkIfPriceChanged(gpu.changes),
             hasAvailabilityChanged: checkIfAvailabilityChanged(gpu.changes),
             ...gpu,

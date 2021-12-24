@@ -1,3 +1,5 @@
+import type * as dbTypes from "./db"
+
 export interface Gpu {
     id?: number
     name: string
@@ -10,4 +12,16 @@ export interface GpuWithPrice extends Gpu {
     isAvailable: boolean
 }
 
-export type ExceptId <T> = Omit<T, "id">;
+export type ExceptId<T> = Omit<T, "id">;
+
+export interface GpuPriceChange {
+    gpuid: number
+    name: string
+    url: string
+    isAvailable: boolean
+    lastPrice: number
+    previousPrice: number
+    hasPriceChanged: boolean
+    hasAvailabilityChanged: boolean
+    changes: dbTypes.PriceChange[]
+}

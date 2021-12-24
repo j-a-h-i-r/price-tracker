@@ -5,7 +5,15 @@ import config from "./core/config";
 
 export async function setupServer() {
     const server = Fastify({
-        logger: true,
+        logger: config.isProduction
+        ? true
+        : {
+            prettyPrint: {
+                translateTime: true,
+                levelFirst: true,
+                ignore: 'pid,hostname',
+            }
+        }
     })
 
     server.register(routes, { prefix: "/api" });

@@ -45,7 +45,7 @@ export async function retrieveGpuPrices(gpuId: number) {
 
 export async function retrieveLatestGpuPriceChanges(): Promise<dbTypes.GpuPriceChange[]> {
     const gpuIdRef = knex.ref(`gp.gpuid`);
-    return knex<dbTypes.GpuPrices>({ gp: GPU_PRICES_TABLES })
+    const priceQuery = knex<dbTypes.GpuPrices>({ gp: GPU_PRICES_TABLES })
         .select("gpuid")
         .select(
             knex
@@ -60,7 +60,13 @@ export async function retrieveLatestGpuPriceChanges(): Promise<dbTypes.GpuPriceC
                 )
                 .as("changes")
         )
-        .groupBy("gpuid")
+        .groupBy("gpuid");
+
+    const priceWithNameQuery = knex(priceQuery.as("pq"))
+        .select("name", "url", "pq.*")
+        .innerJoin(GPUS_TABLE, `${GPUS_TABLE}.id`, "gpuid");
+
+    return priceWithNameQuery;
 }
 
 export async function retrieveGpuDetailsWithEmailSubcribers(gpuIds: number[]): Promise<dbTypes.GpuEmailSubscriberDetailed[]> {
@@ -117,12 +123,12 @@ export async function retrieveSubscriber(email: string) {
 
 export async function saveSubscribedEmail(email: string, code: string) {
     return knex(EMAIL_SUBSCRIBERS_TABLE)
-    .insert({email: email, auth_code: code})
-    .returning("*");
+        .insert({ email: email, auth_code: code })
+        .returning("*");
 }
 
 export async function saveGpuSubscription(emailId: number, gpuId: number) {
     return knex(GPU_SUBSCRIPTION_TABLE)
-    .insert({emailid: emailId, gpuid: gpuId})
-    .returning("*");
+        .insert({ emailid: emailId, gpuid: gpuId })
+        .returning("*");
 }

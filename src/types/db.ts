@@ -22,6 +22,8 @@ export interface PriceChange {
 
 export interface GpuPriceChange {
     gpuid: number
+    name: string
+    url: string
     changes: PriceChange[]
 }
 

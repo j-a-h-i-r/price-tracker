@@ -7,12 +7,17 @@ const LOG_LEVEL = process.env.LOG_LEVEL || DEFAULT_LOG_LEVEL;
 export const logger = pino({
     level: LOG_LEVEL,
     enabled: true,
-    prettyPrint: config.isProduction
-        ? false
-        : {
-            levelFirst: true,
-            translateTime: true,
-        },
+    transport: !config.isProduction
+        ? {
+            target: "pino-pretty",
+            options: {
+                colorize: true,
+                levelFirst: true,
+                translateTime: true,
+                ignore: "pid,hostname",
+            }
+        }
+        : undefined,
 });
 
 export default logger;
