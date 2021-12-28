@@ -4,7 +4,7 @@ import logger from "./core/logger";
 import config from "./core/config";
 
 const cronScheduleString = `0 */${config.scrapeHourInterval} * * *`;
-logger.info("Cron Schedule %s", cronScheduleString);
+logger.debug("Cron Schedule %s", cronScheduleString);
 
 const task = cron.schedule(cronScheduleString, () => {
     logger.info("Running cron for scraping and saving GPU prices");

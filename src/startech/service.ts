@@ -105,6 +105,7 @@ export async function saveGpus(gpusWithPrice: GpuWithPrice[]) {
         const { isAvailable, price, id, ...rest } = gpu;
         return {
             website: "startech",
+            modelid: undefined,
             ...rest
         }
     });
