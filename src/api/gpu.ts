@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import * as gpuService from "../startech/service";
 import { sendEmailOnGpuPriceAvailablityChange } from "../startech/events"
+import dayjs from "dayjs";
 
 type GpuQuery = { name?: string, url?: string, slug?: string, website?: string };
 
@@ -68,22 +69,33 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         const idParam = req.params.id;
         const gpuId = Number(idParam);
         if (!gpuId) {
-            return res.status(500).send({ message: `GPU id (${idParam}) is not valid` });
+            return res.status(400).send({ message: `GPU id (${idParam}) is not valid` });
         }
         const gpu = await gpuService.getGpu(gpuId);
         if (!gpu) {
-            return res.status(500).send({ message: `GPU id (${gpuId}) is not valid` });
+            return res.status(404).send({ message: `GPU id (${gpuId}) is not valid` });
         }
         return gpu;
     })
 
-    fastify.get("/:id/prices", async (req: FastifyRequest<{ Params: { id: string } }>, res) => {
+    fastify.get("/:id/prices", async (req: FastifyRequest<{ Params: { id: string }, Querystring: { start_date: string, end_date: string } }>, res) => {
         const idParam = req.params.id;
         const gpuId = Number(idParam);
         if (!gpuId) {
             return res.status(500).send({ message: `GPU id (${idParam}) is not valid` });
         }
-        const prices = await gpuService.getGpuPrices(gpuId);
+
+        const { start_date, end_date } = req.query ?? {};
+        const startDate = start_date ? dayjs(start_date).toDate() : undefined;
+        const endDate = end_date ? dayjs(end_date).toDate() : undefined;
+        if (startDate && endDate && dayjs(startDate).isAfter(endDate)) {
+            return res.status(400).send({ message: `start_date can not be after end_date` });
+        }
+
+        const prices = await gpuService.getGpuPrices(gpuId, { startDate, endDate });
+        if (!prices) {
+            return res.status(404).send({message: `GPU id (${gpuId}) is not found!`});
+        }
         return prices;
     })
 }

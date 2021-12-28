@@ -21,6 +21,7 @@ export async function retrieveGpus(filter?: {
             Object
                 .entries(filter ?? {})
                 .forEach(([col, value]) => {
+                    if (!value) return;
                     if (col === "name") {
                         builder.andWhere(col, "ilike", `%${value}%`);
                     } else {
@@ -36,11 +37,23 @@ export async function retrieveGpu(gpuId: number) {
         .where({ id: gpuId });
 }
 
-export async function retrieveGpuPrices(gpuId: number) {
+export async function retrieveGpuPrices(gpuId: number, filter?: { startDate: Date | undefined, endDate: Date | undefined }): Promise<dbTypes.GpuPrices[]> {
     return knex<dbTypes.GpuPrices>(GPU_PRICES_TABLES)
         .select()
         .where({ gpuid: gpuId })
+        .modify((builder) => {
+            if (filter?.startDate) builder.andWhere("updated_at", ">=", filter.startDate);
+            if (filter?.endDate) builder.andWhere("updated_at", "<=", filter.endDate);
+        })
         .orderBy("updated_at", "desc");
+}
+
+export async function retrieveLatestGpuPrice(gpuId: number): Promise<dbTypes.GpuPrices[]> {
+    return knex<dbTypes.GpuPrices>(GPU_PRICES_TABLES)
+    .select()
+    .where({ gpuid: gpuId })
+    .orderBy("updated_at", "desc")
+    .limit(1);
 }
 
 export async function retrieveLatestGpuPriceChanges(): Promise<dbTypes.GpuPriceChange[]> {

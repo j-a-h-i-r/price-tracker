@@ -4,9 +4,12 @@ import type { Gpu, GpuPriceChange, GpuWithPrice } from "../types";
 import type * as dbTypes from "../types/db";
 import * as util from "../core/util";
 import emailer from "../core/email";
+import logger from "../core/logger";
 
 export async function getGpus(filter: any) {
-    return gpuStorage.retrieveGpus(filter);
+    // Ignore unknown properties
+    const { name, url, slug, website } = filter;
+    return gpuStorage.retrieveGpus({ name, url, slug, website });
 }
 
 export async function getGpu(gpuId: number): Promise<Gpu | null> {
@@ -15,11 +18,18 @@ export async function getGpu(gpuId: number): Promise<Gpu | null> {
     return gpu[0];
 }
 
-export async function getGpuPrices(gpuId: number) {
+async function getLatestGpuPrice(gpuId: number): Promise<dbTypes.GpuPrices | null> {
+    const gpuPrice = await gpuStorage.retrieveLatestGpuPrice(gpuId);
+    logger.debug({gpuPrice});
+    if (!gpuPrice || gpuPrice.length !== 1) return null;
+    return gpuPrice[0];
+}
+
+export async function getGpuPrices(gpuId: number, filter?: { startDate: Date | undefined, endDate: Date | undefined }) {
     const gpu = await getGpu(gpuId);
     if (!gpu) return null;
 
-    const prices = await gpuStorage.retrieveGpuPrices(gpuId);
+    const prices = await gpuStorage.retrieveGpuPrices(gpuId, filter);
     const pricesFormatted = prices.map((gpuPrice) => {
         const { is_available, price, updated_at } = gpuPrice;
         return {
@@ -29,11 +39,14 @@ export async function getGpuPrices(gpuId: number) {
         }
     })
 
-    const isLastAvailable = pricesFormatted?.[0]?.isAvailable ?? false;
+    const latestGpuPrice = await getLatestGpuPrice(gpuId);
+    const isLastAvailable = latestGpuPrice?.is_available ?? false;
+    const lastPrice = latestGpuPrice?.price ?? null;
 
     return {
         ...gpu,
         isAvailable: isLastAvailable,
+        lastPrice: lastPrice,
         prices: pricesFormatted,
     }
 }
@@ -150,7 +163,7 @@ export async function verifyPendingEmailCode(email: string, code: string) {
 
     const secondsElapsed = dayjs().diff(created_at, "seconds");
     if (secondsElapsed > 60 * 10) return false;
-    
+
     return true;
 }
 
