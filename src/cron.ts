@@ -7,14 +7,14 @@ const cronScheduleString = `0 */${config.scrapeHourInterval} * * *`;
 logger.debug("Cron Schedule %s", cronScheduleString);
 
 const task = cron.schedule(cronScheduleString, () => {
-    logger.info("Running cron for scraping and saving GPU prices");
+    logger.info("Setting up cron tasks");
     
     scrapeAndSaveGpuPrices()
     .then(() => {
-        logger.info("Successfully scraped and saved GPU prices");
+        logger.info("Cron task ran successfully!");
     })
     .catch(() => {
-        logger.error("Error while scraping and saving GPU prices");
+        logger.error("Error while running a cron task!");
     })
 }, {
     scheduled: false,
