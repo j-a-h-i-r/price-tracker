@@ -3,6 +3,7 @@ import logger from "../core/logger";
 import { parseEvent } from "../events";
 import type { GpuPriceChange } from "../types";
 import { getGpuEmailSubscribers, getLatestGpuChanges } from "./service";
+import config from "../core/config";
 
 export async function sendEmailOnGpuPriceAvailablityChange() {
     try {
@@ -105,7 +106,7 @@ async function sendPriceChangeSummaryEmail(changes: GpuPriceChange[]) {
         await emailer.send({
             template: "price-change-summary",
             message: {
-                to: "summary@example.com"
+                to: config.mail.to ?? "summary@example.com",
             },
             locals: {
                 changes: formatted,

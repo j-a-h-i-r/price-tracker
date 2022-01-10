@@ -9,6 +9,7 @@ declare global {
             MAIL_PASS: string;
             MAIL_PORT: number;
             MAIL_FROM: string;
+            MAIL_TO: string;
 
             SCRAPE_HOUR_INTERVAL: string;
         }
