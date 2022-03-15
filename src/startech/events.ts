@@ -87,7 +87,7 @@ async function sendPriceChangeSummaryEmail(changes: GpuPriceChange[]) {
         if (priceIncreased) {
             priceText = `${lastPrice} (${priceChange} increased)`;
         } else {
-            priceText = `${lastPrice} (-${priceChange} decreased)`;
+            priceText = `${lastPrice} (${priceChange} decreased)`;
         }
 
         const status = isAvailable? "Available": "Not Available";
