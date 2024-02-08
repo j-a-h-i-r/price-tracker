@@ -4,6 +4,7 @@ import { parseEvent } from "../events";
 import type { GpuPriceChange } from "../types";
 import { getGpuEmailSubscribers, getLatestGpuChanges } from "./service";
 import config from "../core/config";
+import { postToPage } from "../core/fb";
 
 export async function sendEmailOnGpuPriceAvailablityChange() {
     try {
@@ -119,7 +120,39 @@ async function sendPriceChangeSummaryEmail(changes: GpuPriceChange[]) {
     }
 }
 
+export async function postToFacebook() {
+    const fbToken = config.fbToken;
+    const pageId = config.fbPageId;
+
+    const gpuChanges = await getLatestGpuChanges();
+
+    if (gpuChanges.length === 0) return;
+
+    const lines = gpuChanges.map((gpu) => {
+        const priceDiff = gpu.lastPrice - gpu.previousPrice;
+        const priceDiffSign = priceDiff >= 0? "+" : "";
+        return `${gpu.name} - ${gpu.lastPrice}(${priceDiffSign}${priceDiff})`
+    })
+
+    const gpuPriceText = lines.join("\n");
+
+    const post = `GPU Price Update\n\n`
+        + `${gpuPriceText}`;
+
+    logger.debug(post, "Message to be posted to FB page");
+
+    postToPage(pageId, fbToken, post)
+        .then((resp) => {
+            logger.info("Posted update to FB");
+            logger.info(resp);
+        })
+        .catch((err) => {
+            logger.error(err, "Error while posting update to FB");
+        })
+}
+
 export function setupEventHandlers() {
     parseEvent.subscribe(sendEmailOnGpuPriceAvailablityChange);
+    parseEvent.subscribe(postToFacebook)
 }
 
