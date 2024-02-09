@@ -126,7 +126,10 @@ export async function postToFacebook() {
 
     const gpuChanges = await getLatestGpuChanges();
 
-    if (gpuChanges.length === 0) return;
+    if (gpuChanges.length === 0) {
+        logger.debug("No GPU changes to post. Ignoring.");
+        return;
+    }
 
     const lines = gpuChanges.map((gpu) => {
         const priceDiff = gpu.lastPrice - gpu.previousPrice;

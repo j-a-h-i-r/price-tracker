@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import routes from "./api";
 import logger from "./core/logger";
 import config from "./core/config";
+import devRoutes from "./api/_dev";
 
 export async function setupServer() {
     const server = Fastify({
@@ -17,6 +18,10 @@ export async function setupServer() {
     })
 
     server.register(routes, { prefix: "/api" });
+
+    if (!config.isProduction) {
+        server.register(devRoutes, { prefix: "/_dev" })
+    }
 
     try {
         const PORT = process.env.PORT ?? 3000;
