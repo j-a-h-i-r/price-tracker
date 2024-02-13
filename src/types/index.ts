@@ -23,5 +23,6 @@ export interface GpuPriceChange {
     previousPrice: number
     hasPriceChanged: boolean
     hasAvailabilityChanged: boolean
+    priceDiff: number
     changes: dbTypes.PriceChange[]
 }

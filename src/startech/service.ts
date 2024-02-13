@@ -51,18 +51,18 @@ export async function getGpuPrices(gpuId: number, filter?: { startDate: Date | u
     }
 }
 
-function checkIfAvailabilityChanged(changes: dbTypes.PriceChange[]) {
-    if (changes.length !== 2) return false;
-    const [{ is_available: isAvailable }, { is_available: wasAvailable }] = changes;
-    const hasAvailabilityChanged = isAvailable !== wasAvailable;
-    return hasAvailabilityChanged;
+function checkIfAvailabilityChanged(
+    currentGpu: dbTypes.PriceChange,
+    previousGpu: dbTypes.PriceChange,
+) {
+    return currentGpu.is_available !== previousGpu.is_available;
 }
 
-function checkIfPriceChanged(changes: dbTypes.PriceChange[]) {
-    if (changes.length !== 2) return false;
-    const [{ price: currentPrice }, { price: previousPrice }] = changes;
-    const hasPriceChanged = currentPrice !== previousPrice;
-    return hasPriceChanged;
+function checkIfPriceChanged(
+    currentGpu: dbTypes.PriceChange,
+    previousGpu: dbTypes.PriceChange,
+) {
+    return currentGpu.price !== previousGpu.price;
 }
 
 export async function getLatestGpuChanges(): Promise<GpuPriceChange[]> {
@@ -72,27 +72,41 @@ export async function getLatestGpuChanges(): Promise<GpuPriceChange[]> {
         const { changes } = gpu;
         if (changes.length !== 2) return false;
 
-        const availabilityChanged = checkIfAvailabilityChanged(changes)
-        const priceChanged = checkIfPriceChanged(changes)
+        const [currentPrice, previousPrice] = changes;
+
+        const availabilityChanged = checkIfAvailabilityChanged(currentPrice, previousPrice);
+        const priceChanged = checkIfPriceChanged(currentPrice, previousPrice);
 
         if (!(availabilityChanged || priceChanged)) return false;
         return true;
     })
 
     const updatesFormatted = updatesWithChanges.map((gpu) => {
-        const isAvailable = gpu.changes[0].is_available;
-        const lastPrice = gpu.changes[0].price;
-        const previousPrice = gpu.changes[1].price;
+        const [currentGpu, previousGpu] = gpu.changes;
+        const isAvailable = currentGpu.is_available;
+        const lastPrice = currentGpu.price;
+        const previousPrice = previousGpu.price;
+        const priceDiff = lastPrice - previousPrice;
 
         return {
             isAvailable: isAvailable,
             lastPrice: lastPrice,
             previousPrice: previousPrice,
-            hasPriceChanged: checkIfPriceChanged(gpu.changes),
-            hasAvailabilityChanged: checkIfAvailabilityChanged(gpu.changes),
+            priceDiff: priceDiff,
+            hasPriceChanged: checkIfPriceChanged(currentGpu, previousGpu),
+            hasAvailabilityChanged: checkIfAvailabilityChanged(currentGpu, previousGpu),
             ...gpu,
         }
     })
+
+    updatesFormatted.sort((gpu1, gpu2) => {
+        if (gpu1.priceDiff < gpu2.priceDiff) return -1;
+        if (gpu1.priceDiff > gpu2.priceDiff) return 1;
+        return 0;
+    })
+
+    console.log(updatesFormatted);
+
     return updatesFormatted;
 }
 

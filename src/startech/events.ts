@@ -13,7 +13,10 @@ export async function sendEmailOnGpuPriceAvailablityChange() {
         const gpuChanges = await getLatestGpuChanges();
         logger.debug({ gpuChanges }, "GPU changes");
 
-        const gpuIds = gpuChanges.map((gpu) => gpu.gpuid);
+        // Don't want to email on GPUs that are not available
+        const availableGpus = gpuChanges.filter((gpu) => gpu.lastPrice > 0);
+
+        const gpuIds = availableGpus.map((gpu) => gpu.gpuid);
         logger.info({ gpuIds }, "GpuIds with changes");
 
         const recipients = await getGpuEmailSubscribers(gpuIds);
@@ -131,16 +134,9 @@ export async function postToFacebook() {
         return;
     }
 
-    const lines = gpuChanges.map((gpu) => {
-        const priceDiff = gpu.lastPrice - gpu.previousPrice;
-        const priceDiffSign = priceDiff >= 0? "+" : "";
-        return `${gpu.name} - ${gpu.lastPrice}(${priceDiffSign}${priceDiff})`
-    })
+    const availableGpus = gpuChanges.filter((gpu) => gpu.lastPrice > 0);
 
-    const gpuPriceText = lines.join("\n");
-
-    const post = `GPU Price Update\n\n`
-        + `${gpuPriceText}`;
+    const post = prepareFormattedMessageForPostingToFacebook(availableGpus);
 
     logger.debug(post, "Message to be posted to FB page");
 
@@ -152,6 +148,24 @@ export async function postToFacebook() {
         .catch((err) => {
             logger.error(err, "Error while posting update to FB");
         })
+}
+
+export function prepareFormattedMessageForPostingToFacebook(gpuList: GpuPriceChange[]) {
+    const lines = gpuList.map((gpu) => {
+        const priceDiff = gpu.lastPrice - gpu.previousPrice;
+        const priceDiffSign = priceDiff >= 0? "📈" : "📉";
+        const absolutePriceDiff = Math.abs(gpu.priceDiff);
+        return `${gpu.name}\n`
+            + `New Price: ${gpu.lastPrice} (${absolutePriceDiff} ${priceDiffSign})\n`
+            + `Link: ${gpu.url}\n`
+    })
+
+    const gpuPriceText = lines.join("\n");
+
+    const postBody = `GPU Price Update\n\n`
+        + `${gpuPriceText}`;
+
+    return postBody;
 }
 
 export function setupEventHandlers() {
