@@ -41,6 +41,7 @@ export async function retrieveGpuPrices(gpuId: number, filter?: { startDate: Dat
     return knex<dbTypes.GpuPrices>(GPU_PRICES_TABLES)
         .select()
         .where({ gpuid: gpuId })
+        .andWhere("price", ">", 0)
         .modify((builder) => {
             if (filter?.startDate) builder.andWhere("updated_at", ">=", filter.startDate);
             if (filter?.endDate) builder.andWhere("updated_at", "<=", filter.endDate);

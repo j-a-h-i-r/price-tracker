@@ -26,3 +26,28 @@ export async function getGpuPricesUnderModel(modelId: number) {
         gpu: gpuPrices
     }
 }
+
+export async function getPossibleGpuModels() {
+    const gpus = await gpuService.getGpus({});
+    const gpuModelRegex = /\b\d+\b/gi;
+    const gpusWithModel = gpus.map((gpu) => {
+        const gpuName = gpu.name.toLowerCase();
+        let manufacturer = '';
+        if (
+            gpuName.includes("nvidia") || gpuName.includes("geforce") 
+        ) {
+            manufacturer = 'Nvidia'
+        } else if (gpuName.includes("amd") || gpuName.includes("radeon")) {
+            manufacturer = 'Amd'
+        }
+        let possibleModels = gpuName.match(gpuModelRegex);
+        let model = possibleModels;
+        console.log("model", possibleModels);
+        return {
+            manufacturer,
+            model,
+            ...gpu,
+        }
+    })
+    return gpusWithModel;
+}

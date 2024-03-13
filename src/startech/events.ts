@@ -128,13 +128,12 @@ export async function postToFacebook() {
     const pageId = config.fbPageId;
 
     const gpuChanges = await getLatestGpuChanges();
+    const availableGpus = gpuChanges.filter((gpu) => gpu.lastPrice > 0);
 
-    if (gpuChanges.length === 0) {
+    if (availableGpus.length === 0) {
         logger.debug("No GPU changes to post. Ignoring.");
         return;
     }
-
-    const availableGpus = gpuChanges.filter((gpu) => gpu.lastPrice > 0);
 
     const post = prepareFormattedMessageForPostingToFacebook(availableGpus);
 

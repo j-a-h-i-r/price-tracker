@@ -6,6 +6,10 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         return gpuModelService.getGpuModels();
     })
 
+    fastify.get("/possiblemodels", async (req, res) => {
+        return gpuModelService.getPossibleGpuModels();
+    })
+
     fastify.get("/:modelid/gpus", async (req: FastifyRequest<{ Params: { modelid: string } }>, res) => {
         const idParam = req.params.modelid;
         const modelId = Number(idParam);
