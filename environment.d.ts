@@ -12,6 +12,8 @@ declare global {
             MAIL_TO: string;
 
             SCRAPE_HOUR_INTERVAL: string;
+
+            ADMIN_TOKEN: string;
         }
     }
 }

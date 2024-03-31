@@ -8,5 +8,5 @@ export const knex = Knex({
         min: 2,
         max: 50,
     },
-    debug: !config.isProduction,
+    debug: true,
 })

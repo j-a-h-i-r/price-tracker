@@ -1,8 +1,24 @@
+import logger from "../../core/logger";
 import * as gpuService from "../service";
 import * as gpuModelStorage from "./models.storage";
 
 export async function getGpuModels() {
     return gpuModelStorage.retrieveAllModels();
+}
+
+export async function retrieveAllGpusWithModel() {
+    return gpuModelStorage.retrieveAllGpusWithModel();
+}
+
+export async function insertGpuModels(modelId: number,  modelName: string, gpuIds: number[]) {
+    let newModelId = null;
+    if (!modelId && modelName) {
+        newModelId = await gpuModelStorage.saveModel({name: modelName});
+        logger.info({newModelId}, "New Model ID");
+    }
+
+    let modelIdForInsert: number = modelId ?? newModelId;
+    return gpuModelStorage.saveOrUpdateGpusOfModel(modelIdForInsert, gpuIds)
 }
 
 export async function getGpusOfModel(modelId: number) {

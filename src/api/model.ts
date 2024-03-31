@@ -1,9 +1,41 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import * as gpuModelService from "../startech/models/models.service";
+import logger from "../core/logger";
+import config from "../core/config";
+
+interface ModelManageQuery {
+    token: string;
+}
+
+interface ModelManageBody {
+    modelid?: string
+    modelname?: string
+    gpuids: any[]
+}
 
 export default async function routes(fastify: FastifyInstance, options: any) {
     fastify.get("/", async (req, res) => {
         return gpuModelService.getGpuModels();
+    })
+
+    fastify.get("/allgpus", async (req, res) => {
+        return gpuModelService.retrieveAllGpusWithModel();
+    })
+
+    fastify.post<{
+        Querystring: ModelManageQuery,
+        Headers: {},
+        Body: ModelManageBody,
+    }>("/manage", async (req, res) => {
+        const { modelid, modelname = "", gpuids } = req.body;
+        const { token } = req.query;
+        logger.info({token}, "token");
+        if (token !== config.adminToken) {
+            return res.code(403)
+                    .send({success: false, error: "This operation is not permitted"})
+        }
+        console.log("models payload", modelid, modelname, gpuids);
+        return gpuModelService.insertGpuModels(Number(modelid), modelname, gpuids);
     })
 
     fastify.get("/possiblemodels", async (req, res) => {

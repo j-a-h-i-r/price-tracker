@@ -9,8 +9,10 @@ module.exports = {
 
   development: {
     client: "postgresql",
-    connection: process.env.DATABASE_URL,
-
+    connection: "postgresql://localhost:5432/gpu_prices_dump",
+    migrations: {
+      extension: "ts"
+    }
   },
 
   staging: {

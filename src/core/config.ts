@@ -17,6 +17,7 @@ const config = {
     },
     fbToken: process.env.FB_TOKEN ?? '',
     fbPageId: process.env.FB_PAGE_ID ?? '',
+    adminToken: process.env.ADMIN_TOKEN,
 }
 
 export default config;

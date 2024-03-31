@@ -4,7 +4,7 @@ import { Knex } from "knex";
 export async function up(knex: Knex): Promise<void> {
     return knex.schema
     .createTable("gpu_models", (table) => {
-        table.integer("id").primary();
+        table.increments("id").primary();
         table.text("name");
     })
     .alterTable("gpus", (table) => {
