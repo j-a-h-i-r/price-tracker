@@ -26,7 +26,10 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         return true;
     })
 
-    // Register new alerts
+    /**
+     * Register a new request for GPU price change subscription
+     * This API will send an auth code to the email
+     */
     fastify.post("/:gpuid/subscriptions", async (req: FastifyRequest<{ Body: { email: string }, Params: { gpuid: string } }>, res) => {
         const idParam = req.params.gpuid;
         const gpuId = Number(idParam);
