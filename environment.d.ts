@@ -14,8 +14,10 @@ declare global {
             SCRAPE_HOUR_INTERVAL: string;
 
             ADMIN_TOKEN: string;
+            REDIS_HOST: string;
+            REDIS_PORT: string;
         }
     }
 }
 
-export { }
+export { };

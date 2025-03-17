@@ -1,10 +1,10 @@
-import dayjs from "dayjs";
-import * as gpuStorage from "./storage";
-import type { Gpu, GpuPriceChange, GpuWithPrice } from "../types";
-import type * as dbTypes from "../types/db";
-import * as util from "../core/util";
-import emailer from "../core/email";
-import logger from "../core/logger";
+import dayjs from 'dayjs';
+import * as gpuStorage from './storage';
+import type { Gpu, GpuPriceChange, GpuWithPrice } from '../types';
+import type * as dbTypes from '../types/db';
+import * as util from '../core/util';
+import emailer from '../core/email';
+import logger from '../core/logger';
 
 export async function getGpus(filter: any) {
     // Ignore unknown properties
@@ -36,8 +36,8 @@ export async function getGpuPrices(gpuId: number, filter?: { startDate: Date | u
             isAvailable: is_available,
             price: price,
             updatedAt: updated_at,
-        }
-    })
+        };
+    });
 
     const latestGpuPrice = await getLatestGpuPrice(gpuId);
     const isLastAvailable = latestGpuPrice?.is_available ?? false;
@@ -48,7 +48,7 @@ export async function getGpuPrices(gpuId: number, filter?: { startDate: Date | u
         isAvailable: isLastAvailable,
         lastPrice: lastPrice,
         prices: pricesFormatted,
-    }
+    };
 }
 
 function checkIfAvailabilityChanged(
@@ -79,7 +79,7 @@ export async function getLatestGpuChanges(): Promise<GpuPriceChange[]> {
 
         if (!(availabilityChanged || priceChanged)) return false;
         return true;
-    })
+    });
 
     const updatesFormatted = updatesWithChanges.map((gpu) => {
         const [currentGpu, previousGpu] = gpu.changes;
@@ -96,14 +96,14 @@ export async function getLatestGpuChanges(): Promise<GpuPriceChange[]> {
             hasPriceChanged: checkIfPriceChanged(currentGpu, previousGpu),
             hasAvailabilityChanged: checkIfAvailabilityChanged(currentGpu, previousGpu),
             ...gpu,
-        }
-    })
+        };
+    });
 
     updatesFormatted.sort((gpu1, gpu2) => {
         if (gpu1.priceDiff < gpu2.priceDiff) return -1;
         if (gpu1.priceDiff > gpu2.priceDiff) return 1;
         return 0;
-    })
+    });
 
     console.log(updatesFormatted);
 
@@ -118,10 +118,10 @@ export async function saveGpus(gpusWithPrice: GpuWithPrice[]) {
     const gpus = gpusWithPrice.map((gpu) => {
         const { isAvailable, price, id, ...rest } = gpu;
         return {
-            website: "startech",
+            website: 'startech',
             modelid: undefined,
             ...rest
-        }
+        };
     });
 
     const result = await gpuStorage.saveOrUpdateGpus(gpus);
@@ -148,9 +148,9 @@ function augmentGpuPricesWithId(gpus: Gpu[], gpusWithPrice: GpuWithPrice[]): dbT
                 is_available: isAvailable,
                 price,
                 updated_at: currentDate,
-            })
+            });
         }
-    })
+    });
     return augmented;
 }
 
@@ -176,7 +176,7 @@ export async function verifyPendingEmailCode(email: string, code: string) {
     const { verification_code, created_at } = pendingEmail;
     if (verification_code !== code) return false;
 
-    const secondsElapsed = dayjs().diff(created_at, "seconds");
+    const secondsElapsed = dayjs().diff(created_at, 'seconds');
     if (secondsElapsed > 60 * 10) return false;
 
     return true;
@@ -206,24 +206,24 @@ export async function handleEmailVerification(email: string, code: string, gpuId
 
 async function sendAuthCodeEmail(email: string, authCode: string) {
     return emailer.send({
-        template: "auth-code",
+        template: 'auth-code',
         message: {
             to: email,
         },
         locals: {
             authCode: authCode,
         }
-    })
+    });
 }
 
 async function sendVerificationEmail(email: string, verificationCode: string) {
     return emailer.send({
-        template: "verification-code",
+        template: 'verification-code',
         message: {
             to: email,
         },
         locals: {
             verificationCode: verificationCode,
         }
-    })
+    });
 }

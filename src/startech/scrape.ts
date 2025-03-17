@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 
 async function fetchListingPageHtml(pageNumber: number): Promise<string> {
     const pageUrl = `https://www.startech.com.bd/component/graphics-card?page=${pageNumber}`;
@@ -14,8 +14,8 @@ async function fetchAllListingHtml(numPages: number) {
 
     const resps = await Promise.allSettled(reqs);
     const htmls = resps.map((resp) => {
-        if (resp.status === "fulfilled") return resp.value;
-        return "";
+        if (resp.status === 'fulfilled') return resp.value;
+        return '';
     });
     const validHtmls = htmls.filter((html) => html.length > 0);
     return validHtmls;
@@ -24,4 +24,4 @@ async function fetchAllListingHtml(numPages: number) {
 export {
     fetchAllListingHtml,
     fetchListingPageHtml,
-}
+};

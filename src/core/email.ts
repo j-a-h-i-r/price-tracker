@@ -1,5 +1,5 @@
-import Email from "email-templates";
-import config from "./config";
+import Email from 'email-templates';
+import config from './config';
 
 const emailer = new Email({
     message: {
@@ -18,6 +18,6 @@ const emailer = new Email({
     : {
         jsonTransport: true,
     }
-})
+});
 
 export default emailer;
