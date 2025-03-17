@@ -115,7 +115,6 @@ export class Techland extends BaseScraper {
             const value = row.children().last().text().trim();
             specifications[key] = value;
         });
-
         return {
             name: $('#product > table > caption > div > h1').text().trim(),
             price: price ? Number(price) : null,

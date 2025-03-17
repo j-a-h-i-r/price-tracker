@@ -4,6 +4,10 @@ import logger from './core/logger.js';
 import config from './core/config.js';
 import { sdk } from './otlp.js';
 
+/**
+ * Set up the queeue, worker and cron job
+ * @returns 
+ */
 export async function setupEverything() {
     logger.info('Setting up stuff');
 

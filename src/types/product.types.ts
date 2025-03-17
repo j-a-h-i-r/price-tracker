@@ -7,6 +7,10 @@ export interface ProductJob extends ScrapedProduct {
     website_id: number; // Add the internal website_id to the scraped product
 }
 
+export interface ProductWithExternalCategoryId extends ProductJob {
+    external_category_id: number;
+}
+
 export interface ProductWithExternalId extends ProductJob {
     external_id: number;
 }
