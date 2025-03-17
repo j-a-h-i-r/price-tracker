@@ -1,4 +1,4 @@
-import type * as dbTypes from "./db"
+import type * as dbTypes from './db';
 
 export interface Gpu {
     id?: number
@@ -12,7 +12,7 @@ export interface GpuWithPrice extends Gpu {
     isAvailable: boolean
 }
 
-export type ExceptId<T> = Omit<T, "id">;
+export type ExceptId<T> = Omit<T, 'id'>;
 
 export interface GpuPriceChange {
     gpuid: number

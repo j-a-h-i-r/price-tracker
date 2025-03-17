@@ -1,17 +1,17 @@
-import { GpuPriceChange } from "../../types";
+import { GpuPriceChange } from '../../types';
 import {
     prepareFormattedMessageForPostingToFacebook
-} from "../events";
+} from '../events';
 
-describe("Test facebook message posting", () => {
-    test("Correct formatting for no GPU change", () => {
+describe('Test facebook message posting', () => {
+    test('Correct formatting for no GPU change', () => {
         const post = prepareFormattedMessageForPostingToFacebook([]);
         expect(post).toEqual(
-            `GPU Price Update\n\n`
-        )
-    })
+            'GPU Price Update\n\n'
+        );
+    });
 
-    test("Correct format for a list of GPU change", () => {
+    test('Correct format for a list of GPU change', () => {
         const priceChanges: GpuPriceChange[] = [
             {
                 gpuid: 1,
@@ -25,12 +25,12 @@ describe("Test facebook message posting", () => {
                 priceDiff: 5,
                 changes: []
             }
-        ]
+        ];
         const post = prepareFormattedMessageForPostingToFacebook(priceChanges);
         expect(post).toEqual(
-            `GPU Price Update\n\n\n`
-            + `New Price: 10 (5 📈)\n`
-            + `Link: https://sample/product\n`
-        )
-    })
-})
+            'GPU Price Update\n\n\n'
+            + 'New Price: 10 (5 📈)\n'
+            + 'Link: https://sample/product\n'
+        );
+    });
+});

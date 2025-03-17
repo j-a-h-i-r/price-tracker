@@ -3,3 +3,4 @@ coverage/
 /tests/
 .env
 dist/
+.DS_Store

@@ -13,8 +13,8 @@ async function parseProducts(): Promise<GpuWithPrice[]> {
         productDivs.forEach((productDiv) => {
             const gpu = parseCardDiv(productDiv);
             products.push(gpu);
-        })
-    })
+        });
+    });
     return products;
 }
 
@@ -25,4 +25,4 @@ export {
     fetchAllListingHtml,
     fetchListingPageHtml,
     parseProducts,
-}
+};

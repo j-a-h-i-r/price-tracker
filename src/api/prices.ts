@@ -2,13 +2,15 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import * as gpuService from '../startech/service';
 import { sendEmailOnGpuPriceAvailablityChange } from '../startech/events';
 import dayjs from 'dayjs';
+import { knex } from '../core/db';
 
 type GpuQuery = { name?: string, url?: string, slug?: string, website?: string };
 
 export default async function routes(fastify: FastifyInstance, options: any) {
     fastify.get('/', async (req: FastifyRequest<{ Querystring: GpuQuery }>, res) => {
-        const query = req.query;
-        return gpuService.getGpus(query);
+        return knex
+            .select('*')
+            .from('prices');
     });
 
     fastify.get('/changes', async (req, res) => {

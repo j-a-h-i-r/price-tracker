@@ -1,22 +1,22 @@
 // Update with your config settings.
-require("dotenv").config();
+require('dotenv').config();
 
 module.exports = {
 
   migrations: {
-    extension: "ts",
+    extension: 'ts',
   },
 
   development: {
-    client: "postgresql",
-    connection: "postgresql://localhost:5432/gpu_prices_dump",
+    client: 'postgresql',
+    connection: process.env.DATABASE_URL,
     migrations: {
-      extension: "ts"
+      extension: 'ts'
     }
   },
 
   staging: {
-    client: "postgresql",
+    client: 'postgresql',
     connection: process.env.DATABASE_URL,
     pool: {
       min: 2,
@@ -25,15 +25,14 @@ module.exports = {
   },
 
   production: {
-    client: "postgresql",
+    client: 'postgresql',
     connection: process.env.DATABASE_URL,
     pool: {
       min: 2,
       max: 25
     },
     migrations: {
-      extension: "js",
+      extension: 'js',
     }
   }
-
 };

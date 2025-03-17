@@ -1,22 +1,39 @@
-import { EventEmitter } from "events";
-import logger from "./core/logger";
+import { EventEmitter } from 'events';
+import logger from './core/logger';
 
-class ParseEvent {
-    private readonly eventName = "parse-done";
+class BaseEvent {
     event: EventEmitter;
-    constructor() {
+    constructor(protected readonly eventName: string) {
         this.event = new EventEmitter();    
     }
 
-    notify() {
-        this.event.emit(this.eventName);
+    notify(...args: any[]) {
+        this.event.emit(this.eventName, ...args);
     }
 
     subscribe(fn: (...args: any[]) => void) {
-        this.event.on(this.eventName, fn);
+        this.event.on(this.eventName, (...args: any[]) => {
+            setImmediate(() => fn(...args));
+        });
+    }
+
+    unsubscribe() {
+        this.event.removeAllListeners(this.eventName);
+    }
+}
+
+class ParseEvent extends BaseEvent {
+    constructor() {
+        super('parse-done');
+    }
+}
+
+class QueueEvent extends BaseEvent {
+    constructor() {
+        super('queue-job');
     }
 }
 
 const parseEvent = new ParseEvent();
-
-export { parseEvent }
+const queueEvent = new QueueEvent();
+export { parseEvent, queueEvent };

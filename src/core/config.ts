@@ -1,8 +1,12 @@
 const NODE_ENV = process.env.NODE_ENV;
-const isProduction = NODE_ENV === "production";
+const isProduction = NODE_ENV === 'production';
 
 const config = {
     databaseUrl: process.env.DATABASE_URL,
+    redis: {
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT,
+    },
     isProduction: isProduction,
     scrapeHourInterval: Number(process.env.SCRAPE_HOUR_INTERVAL) || 2,
     mail: {
@@ -18,6 +22,6 @@ const config = {
     fbToken: process.env.FB_TOKEN ?? '',
     fbPageId: process.env.FB_PAGE_ID ?? '',
     adminToken: process.env.ADMIN_TOKEN,
-}
+};
 
 export default config;

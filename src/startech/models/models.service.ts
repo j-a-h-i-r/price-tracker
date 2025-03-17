@@ -1,9 +1,13 @@
-import logger from "../../core/logger";
-import * as gpuService from "../service";
-import * as gpuModelStorage from "./models.storage";
+import logger from '../../core/logger';
+import * as gpuService from '../service';
+import * as gpuModelStorage from './models.storage';
 
 export async function getGpuModels() {
     return gpuModelStorage.retrieveAllModels();
+}
+
+export async function getGpuModel(modelId: string) {
+    return gpuModelStorage.retrieveModel(modelId);
 }
 
 export async function retrieveAllGpusWithModel() {
@@ -14,11 +18,11 @@ export async function insertGpuModels(modelId: number,  modelName: string, gpuId
     let newModelId = null;
     if (!modelId && modelName) {
         newModelId = await gpuModelStorage.saveModel({name: modelName});
-        logger.info({newModelId}, "New Model ID");
+        logger.info({newModelId}, 'New Model ID');
     }
 
-    let modelIdForInsert: number = modelId ?? newModelId;
-    return gpuModelStorage.saveOrUpdateGpusOfModel(modelIdForInsert, gpuIds)
+    const modelIdForInsert: number = modelId ?? newModelId;
+    return gpuModelStorage.saveOrUpdateGpusOfModel(modelIdForInsert, gpuIds);
 }
 
 export async function getGpusOfModel(modelId: number) {
@@ -38,9 +42,7 @@ export async function getGpuPricesUnderModel(modelId: number) {
     const gpuIds = gpus.map((gpu) => gpu.id);
     const gpuPromises = gpuIds.map((gpuId) => gpuService.getGpuPrices(gpuId));
     const gpuPrices = await Promise.all(gpuPromises);
-    return {
-        gpu: gpuPrices
-    }
+    return gpuPrices;
 }
 
 export async function getPossibleGpuModels() {
@@ -50,20 +52,30 @@ export async function getPossibleGpuModels() {
         const gpuName = gpu.name.toLowerCase();
         let manufacturer = '';
         if (
-            gpuName.includes("nvidia") || gpuName.includes("geforce") 
+            gpuName.includes('nvidia') || gpuName.includes('geforce') 
         ) {
-            manufacturer = 'Nvidia'
-        } else if (gpuName.includes("amd") || gpuName.includes("radeon")) {
-            manufacturer = 'Amd'
+            manufacturer = 'Nvidia';
+        } else if (gpuName.includes('amd') || gpuName.includes('radeon')) {
+            manufacturer = 'Amd';
         }
-        let possibleModels = gpuName.match(gpuModelRegex);
-        let model = possibleModels;
-        console.log("model", possibleModels);
+        const possibleModels = gpuName.match(gpuModelRegex);
+        const model = possibleModels;
+        console.log('model', possibleModels);
         return {
             manufacturer,
             model,
             ...gpu,
-        }
-    })
+        };
+    });
     return gpusWithModel;
+}
+
+export async function getModelDiscovery(modelId: number) {
+    const firstSeen = await gpuModelStorage.getFirstTimeModelSeen(modelId);
+    const lastSeen = await gpuModelStorage.getLastTimeModelSeen(modelId);
+
+    return {
+        firstInstance: firstSeen,
+        lastInstance: lastSeen,
+    };
 }
