@@ -92,6 +92,7 @@ export class QueueProcessor {
             const products = this.jobs.slice(0, this.BATCH_SIZE);
             this.jobs = this.jobs.slice(this.BATCH_SIZE);
             const categoriesMap = await this.processAndPersistCategories(products);
+            const manufacturersMap = await this.processAndPersistManufacturers(products);
             const productsWithCategories = this.addCategoriesToProducts(products, categoriesMap);
             const savedProducts = await this.productService.saveExternalProducts(productsWithCategories);
             await this.productService.savePrices(savedProducts);
@@ -103,6 +104,16 @@ export class QueueProcessor {
             this.lastProcessedTime = Date.now();
             // this.processIfNeeded();
         }
+    }
+
+    private async processAndPersistManufacturers(products: ProductJob[]) {
+        const manufacturers = products.map((product) => product.manufacturer);
+        const savedManufacturers = await this.productService.saveManufacturers(manufacturers);
+        const manufacturersMap = new Map<string, number>();
+        savedManufacturers.forEach((manufacturer) => {          
+            manufacturersMap.set(manufacturer.name, manufacturer.id);
+        });
+        return manufacturersMap;
     }
 
     private async processAndPersistCategories(products: ProductJob[]): Promise<Map<number, Map<string, number>>> {
