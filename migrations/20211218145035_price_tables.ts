@@ -10,6 +10,16 @@ export async function up(knex: Knex): Promise<void> {
         table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
         table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
     })
+    .createTable('manufacturers', (table) => {
+        // Creating a manufacturers table to store the manufacturers of the products. 
+        // Different websites may have slightly different names for the same manufacturer.
+        // This table will help in normalizing the manufacturer names.
+        table.comment('Stores the manufacturers of the products');
+        table.increments('id').primary();
+        table.text('name').notNullable().unique();
+        table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
+        table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
+    })
     .createTable('internal_categories', (table) => {
         table.comment('Stores the internal categories of the products');
         table.increments('id').primary();
@@ -33,6 +43,8 @@ export async function up(knex: Knex): Promise<void> {
         table.increments('id').primary();
         table.integer('internal_category_id');
         table.text('name').notNullable();
+        // nullable because manufacturere id will be determined after post processing
+        table.integer('manufacturer_id').nullable();
         table.jsonb('metadata').defaultTo('{}');
         table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
         table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
@@ -54,7 +66,7 @@ export async function up(knex: Knex): Promise<void> {
         table.increments('id').primary();
         table.integer('external_product_id').notNullable();
         table.boolean('is_available').notNullable();
-        table.decimal('price', 10, 2);
+        table.double('price').nullable(); // price can be null if the product is not available
         table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
         table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
     })

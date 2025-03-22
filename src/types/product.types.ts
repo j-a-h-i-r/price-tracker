@@ -19,6 +19,11 @@ export interface Category {
     id?: number;
 }
 
+export interface Manufacturer {
+    name: string;
+    id: number;
+}
+
 export interface JobData {
     name: string;
     data: ProductJob;

@@ -1,5 +1,5 @@
 import { knex } from '../core/db';
-import { Category, ProductJob, ProductWithExternalCategoryId, ProductWithExternalId } from '../types/product.types';
+import { Category, Manufacturer, ProductJob, ProductWithExternalCategoryId, ProductWithExternalId } from '../types/product.types';
 import logger from '../core/logger';
 
 export class ProductService {
@@ -34,11 +34,49 @@ export class ProductService {
         }));
     }
 
+    /**
+     * Creates a map of website_id to a map of category name to category id
+     * to easily process external categories
+     * @returns A map of website_id to a map of category name to category id
+     */
+    async getExternalCategoriesMapForWebsites(): Promise<Map<number, Map<string, number>>> {
+        const categories = await knex<Category>('external_categories')
+            .select('*');
+        const websiteCategoriesMap: Map<number, Map<string, number>> = new Map();
+        categories.forEach((category) => {
+            const { website_id, name, id } = category;
+            if (websiteCategoriesMap.has(website_id)) {
+                websiteCategoriesMap.get(website_id)?.set(name, id!);
+            } else {
+                websiteCategoriesMap.set(website_id, new Map([[name, id!]]));
+            }
+        });
+        return websiteCategoriesMap;
+    }
+
     async saveExternalCategories(categories: Category[]): Promise<Category[]> {
         return knex('external_categories')
             .insert(categories)
             .onConflict(['name', 'website_id'])
             .merge()
+            .returning('*');
+    }
+
+    async getManufacturersMap(): Promise<Map<string, number>> {
+        const manufacturers = await knex<Manufacturer>('manufacturers').select('*');
+        const manufacturersMap = new Map<string, number>();
+        manufacturers.forEach((manufacturer) => {
+            manufacturersMap.set(manufacturer.name, manufacturer.id);
+        });
+        return manufacturersMap;
+    }
+
+    async saveManufacturers(manufacturers: string[]): Promise<Manufacturer[]> {
+        const dbManufacturers = manufacturers.map((manufacturer) => ({ name: manufacturer }));
+        return knex<Manufacturer>('manufacturers')
+            .insert(dbManufacturers)
+            .onConflict(['name'])
+            .ignore()
             .returning('*');
     }
 }
