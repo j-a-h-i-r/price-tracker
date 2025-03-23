@@ -1,17 +1,17 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { BaseScraper } from './base-scraper';
+import { BaseScraper, CategoryLink } from './base-scraper';
 import { ScrapedProduct, Website } from './scraper.types';
 import logger from '../core/logger';
 
 export class StarTech extends BaseScraper {
-    readonly categories = [
+    readonly categories: CategoryLink[] = [
         // {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
         // {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
         // {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
-        // {  category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
+        {  category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
         // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
-        // {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
+        {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
         // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
         // {  category: 'Keyboard', url: 'https://www.startech.com.bd/accessories/keyboards', },
     ];
@@ -60,6 +60,7 @@ export class StarTech extends BaseScraper {
     async parseProductPage(pageUrl: string): Promise<ScrapedProduct> {
         logger.debug(`Scraping ${pageUrl}`);
         // await this.waitIfNeeded();
+        await this.jitterWait();
 
         const req = await axios.get(pageUrl);
         const $ = cheerio.load(req.data);
@@ -72,7 +73,6 @@ export class StarTech extends BaseScraper {
             slug: pageUrl.split('/').pop() ?? '',
             manufacturer: $('td.product-info-data.product-brand').text().trim(),
             metadata: this.parseSpecifications($),
-            category: $('ul[class=\'breadcrumb\'] > li:nth-child(2) > a > span').text().trim(),
         };
     }
 

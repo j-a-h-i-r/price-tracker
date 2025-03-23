@@ -4,8 +4,8 @@ export async function up(knex: Knex): Promise<void> {
     return knex.schema
     .createTable('websites', (table) => {
         table.comment('Stores the websites that are being tracked');
-        table.increments('id').primary();
-        table.text('name').notNullable();
+        table.integer('id').primary(); // The id is manually set
+        table.text('name').notNullable().unique();
         table.text('url').notNullable().unique();
         table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
         table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
@@ -20,28 +20,17 @@ export async function up(knex: Knex): Promise<void> {
         table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
         table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
     })
-    .createTable('internal_categories', (table) => {
+    .createTable('categories', (table) => {
         table.comment('Stores the internal categories of the products');
-        table.increments('id').primary();
-        table.text('name').notNullable();
+        table.integer('id').primary();      // The id is manually set
+        table.text('name').unique();
         table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
         table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
-    })
-    .createTable('external_categories', (table) => {
-        table.comment('Stores the categories of the products');
-        table.increments('id').primary();
-        table.text('name').notNullable();
-        table.text('url');
-        table.integer('website_id').comment('The website id that the category is from');
-        table.integer('internal_category_id').comment('The internal category id that the category is from');
-        table.unique(['name', 'website_id']).comment('Unique constraint for name and website_id');
-        table.timestamp('created_at').defaultTo(knex.fn.now());
-        table.timestamp('updated_at').defaultTo(knex.fn.now());
     })
     .createTable('internal_products', (table) => {
         table.comment('Stores the internal products that are being tracked');
         table.increments('id').primary();
-        table.integer('internal_category_id');
+        table.integer('category_id');
         table.text('name').notNullable();
         // nullable because manufacturere id will be determined after post processing
         table.integer('manufacturer_id').nullable();
@@ -52,9 +41,9 @@ export async function up(knex: Knex): Promise<void> {
     .createTable('external_products', (table) => {
         table.comment('Stores the products that are being tracked');
         table.increments('id').primary();
-        table.integer('internal_product_id');
+        table.integer('internal_product_id').nullable();
+        table.integer('category_id').notNullable();
         table.integer('website_id').notNullable();
-        table.integer('external_category_id');
         table.text('name').notNullable();
         table.text('url').notNullable().unique();
         table.jsonb('metadata').defaultTo('{}');
@@ -100,8 +89,8 @@ export async function up(knex: Knex): Promise<void> {
 export async function down(knex: Knex): Promise<void> {
     return knex.schema
     .dropTable('websites')
-    .dropTable('internal_categories')
-    .dropTable('external_categories')
+    .dropTable('manufacturers')
+    .dropTable('categories')
     .dropTable('internal_products')
     .dropTable('external_products')
     .dropTable('prices')

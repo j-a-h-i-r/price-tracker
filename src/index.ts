@@ -4,6 +4,7 @@ import config from './core/config';
 import { scrapers } from './scrapers';
 import { setupEverything } from './setup';
 import { queueEvent } from './events';
+import { categoriesMap } from './constants';
 
 if (require.main === module) {
     if (config.isProduction) {
@@ -43,6 +44,7 @@ export function startScraping() {
                 products.forEach(product => {
                     queueEvent.notify({
                         ...product,
+                        category_id: categoriesMap[category],
                         website_id: website.website_id,
                     });
                 });
