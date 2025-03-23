@@ -1,14 +1,14 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { BaseScraper } from './base-scraper';
+import { BaseScraper, CategoryLink } from './base-scraper';
 import * as fs from 'fs';
 import { ScrapedProduct, Website } from './scraper.types';
 import logger from '../core/logger';
 
 export class Techland extends BaseScraper {
-    readonly categories = [
+    readonly categories: CategoryLink[] = [
         // {  category: 'Laptop', url: 'https://www.techlandbd.com/brand-laptops' },
-        // {  category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' },
+        // {  category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' }, 
         // {  category: 'Phone', url: 'https://www.techlandbd.com/smartphone-and-tablet/smartphone' },
         // {  category: 'Monitor', url: 'https://www.techlandbd.com/monitor-and-display/computer-monitor' },
         {  category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
@@ -73,7 +73,6 @@ export class Techland extends BaseScraper {
             slug: pageUrl.split('/').pop() ?? '',
             manufacturer: brand,
             metadata: specifications,
-            category: '',
         };
     }
 

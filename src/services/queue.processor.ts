@@ -1,4 +1,4 @@
-import { ProductJob, ProductWithExternalCategoryId } from '../types/product.types';
+import { ProductJob } from '../types/product.types';
 import { ProductService } from './product.service';
 import logger from '../core/logger';
 import { queueEvent } from '../events';
@@ -91,12 +91,12 @@ export class QueueProcessor {
             // Find something like a deque to get the batch efficiently
             const products = this.jobs.slice(0, this.BATCH_SIZE);
             this.jobs = this.jobs.slice(this.BATCH_SIZE);
-            const categoriesMap = await this.processAndPersistCategories(products);
-            const manufacturersMap = await this.processAndPersistManufacturers(products);
-            const productsWithCategories = this.addCategoriesToProducts(products, categoriesMap);
-            const savedProducts = await this.productService.saveExternalProducts(productsWithCategories);
-            await this.productService.savePrices(savedProducts);
             
+            // Save the manufacturers in DB
+            await this.processAndPersistManufacturers(products);
+            const savedProducts = await this.productService.saveExternalProducts(products);
+            await this.productService.savePrices(savedProducts);
+
             logger.info(`Successfully processed batch of ${products.length} products`);
         } catch (error) {
             logger.error(error, 'Failed to process batch');
@@ -108,66 +108,12 @@ export class QueueProcessor {
 
     private async processAndPersistManufacturers(products: ProductJob[]) {
         const manufacturers = products.map((product) => product.manufacturer);
-        const savedManufacturers = await this.productService.saveManufacturers(manufacturers);
+        const distinctManufacturers = [...new Set(manufacturers)];
+        const savedManufacturers = await this.productService.saveManufacturers(distinctManufacturers);
         const manufacturersMap = new Map<string, number>();
         savedManufacturers.forEach((manufacturer) => {          
             manufacturersMap.set(manufacturer.name, manufacturer.id);
         });
         return manufacturersMap;
-    }
-
-    private async processAndPersistCategories(products: ProductJob[]): Promise<Map<number, Map<string, number>>> {
-        const websiteCategories = this.getExternalCategoriesPerWebsite(products);
-        const websiteCategoriesMap: Map<number, Map<string, number>> = new Map();
-
-        for (const [websiteId, categories] of websiteCategories) {
-            const distinctCategories = Array.from(new Set(categories));
-            const savedCategories = await this.saveCategories(websiteId, distinctCategories);
-            const categoriesMap: Map<string, number> = new Map();
-            savedCategories.forEach((category) => {
-                categoriesMap.set(category.name, category.id!);
-            });
-            websiteCategoriesMap.set(websiteId, categoriesMap);
-        }
-
-        return websiteCategoriesMap;
-    }
-
-    private getExternalCategoriesPerWebsite(products: ProductJob[]): Map<number, string[]> {
-        const websiteCategories = new Map<number, string[]>();
-        products.forEach((product) => {
-            if (websiteCategories.has(product.website_id)) {
-                websiteCategories.get(product.website_id)?.push(product.category);
-            } else {
-                websiteCategories.set(product.website_id, [product.category]);
-            }
-        });
-        return websiteCategories;
-    }
-
-    private async saveCategories(websiteId: number, categories: string[]) {
-        const externalCategories = categories.map(category => ({
-            name: category,
-            website_id: websiteId
-        }));
-        return this.productService.saveExternalCategories(externalCategories);
-    }
-
-    // private mapCategories(
-    //     categoriesMap: Map<number, Map<string, number>>,
-    //     websiteId: number,
-    //     savedCategories: Category[]
-    // ) {
-    //     categoriesMap.set(websiteId, new Map());
-    //     savedCategories.forEach((category) => {
-    //         categoriesMap.get(websiteId)?.set(category.name, category.id!);
-    //     });
-    // }
-
-    private addCategoriesToProducts(products: ProductJob[], categoriesMap: Map<number, Map<string, number>>): ProductWithExternalCategoryId[] {
-        return products.map((product) => ({
-            ...product,
-            external_category_id: categoriesMap.get(product.website_id)?.get(product.category)!
-        }));
     }
 }

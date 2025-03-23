@@ -1,3 +1,4 @@
+import { CategoryName } from '../constants';
 import { ScrapeConsumer } from './scrape-events';
 
 export interface ScrapedProduct {
@@ -8,7 +9,6 @@ export interface ScrapedProduct {
     metadata: any
     isAvailable: boolean
     url: string
-    category: string    // raw category string 
 }
 
 export interface Website {
@@ -21,4 +21,4 @@ export interface Scraper {
     scrape(): ScrapeConsumer;
 }
 
-export type ScrapeListener = (category: string, products: ScrapedProduct[]) => void;
+export type ScrapeListener = (category: CategoryName, products: ScrapedProduct[]) => void;

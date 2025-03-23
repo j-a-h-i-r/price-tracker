@@ -1,6 +1,6 @@
 import { knex } from '../core/db';
-import { Category, Manufacturer, ProductJob, ProductWithExternalCategoryId, ProductWithExternalId } from '../types/product.types';
-import logger from '../core/logger';
+import { Manufacturer, ProductJob, ProductWithExternalId } from '../types/product.types';
+import { Category } from '../constants';
 
 export class ProductService {
     async savePrices(products: ProductWithExternalId[]): Promise<void> {
@@ -13,13 +13,13 @@ export class ProductService {
         await knex('prices').insert(prices);
     }
 
-    async saveExternalProducts(products: ProductWithExternalCategoryId[]): Promise<ProductWithExternalId[]> {
+    async saveExternalProducts(products: ProductJob[]): Promise<ProductWithExternalId[]> {
         const dbProducts = products.map((product) => ({
             name: product.name,
             url: product.url,
             website_id: product.website_id,
-            external_category_id: product.external_category_id,
             metadata: product.metadata,
+            category_id: product.category_id,
         }));
 
         const ids = await knex('external_products')
@@ -32,26 +32,6 @@ export class ProductService {
             ...product,
             external_id: ids[index].id
         }));
-    }
-
-    /**
-     * Creates a map of website_id to a map of category name to category id
-     * to easily process external categories
-     * @returns A map of website_id to a map of category name to category id
-     */
-    async getExternalCategoriesMapForWebsites(): Promise<Map<number, Map<string, number>>> {
-        const categories = await knex<Category>('external_categories')
-            .select('*');
-        const websiteCategoriesMap: Map<number, Map<string, number>> = new Map();
-        categories.forEach((category) => {
-            const { website_id, name, id } = category;
-            if (websiteCategoriesMap.has(website_id)) {
-                websiteCategoriesMap.get(website_id)?.set(name, id!);
-            } else {
-                websiteCategoriesMap.set(website_id, new Map([[name, id!]]));
-            }
-        });
-        return websiteCategoriesMap;
     }
 
     async saveExternalCategories(categories: Category[]): Promise<Category[]> {
@@ -76,7 +56,7 @@ export class ProductService {
         return knex<Manufacturer>('manufacturers')
             .insert(dbManufacturers)
             .onConflict(['name'])
-            .ignore()
+            .merge()
             .returning('*');
     }
 }

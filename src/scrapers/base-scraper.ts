@@ -1,9 +1,10 @@
 import { ScrapedProduct, Scraper } from './scraper.types';
 import { ScrapeConsumer, ScrapeProducer } from './scrape-events';
 import logger from '../core/logger';
+import { CategoryName } from '../constants';
 
 export interface CategoryLink {
-    category: string;
+    category: CategoryName;
     url: string;
 }
 
