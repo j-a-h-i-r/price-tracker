@@ -103,6 +103,6 @@
     "transpileOnly": true,
     "esm": true,
   },
-  "include": ["src/**/*", "migrations/**/*", "seeds/**/*"],
+  "include": ["src/**/*", "migrations/**/*", "seeds/**/*", "knexfile.ts"],
   "exclude": ["node_modules", "dist"],
 }

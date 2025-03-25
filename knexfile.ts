@@ -1,8 +1,7 @@
 // Update with your config settings.
-require('dotenv').config();
+import 'dotenv/config';
 
-module.exports = {
-
+export default{
   migrations: {
     extension: 'ts',
   },
