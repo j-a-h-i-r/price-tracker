@@ -40,7 +40,7 @@ export const categories = [
 
 export type CategoryName = typeof categories[number]['name'];
 
-export const categoriesMap = categories.reduce((acc, category) => {
+export const categoriesMap: Record<CategoryName, number> = categories.reduce((acc, category) => {
     acc[category.name] = category.id;
     return acc;
 }, {} as Record<CategoryName, number>);

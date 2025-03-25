@@ -1,7 +1,8 @@
-import { ScrapedProduct, Scraper } from './scraper.types';
-import { ScrapeConsumer, ScrapeProducer } from './scrape-events';
-import logger from '../core/logger';
-import { CategoryName } from '../constants';
+import { ScrapedProduct, Scraper } from './scraper.types.js';
+import { ScrapeConsumer, ScrapeProducer } from './scrape-events.js';
+import logger from '../core/logger.js';
+import { CategoryName } from '../constants.js';
+import pThrottle from 'p-throttle';
 
 export interface CategoryLink {
     category: CategoryName;
@@ -15,6 +16,11 @@ export abstract class BaseScraper implements Scraper {
     protected readonly REQUEST_LIMIT = 200;
     // Wait time in milliseconds
     protected readonly WAIT_FOR_MS = 5 * 1000;
+
+    protected readonly throttle = pThrottle({
+        limit: 100,     // 100 requests per second
+        interval: 1000,
+    })
 
     /**
      * Helper function to wait for a given number of milliseconds

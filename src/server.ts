@@ -1,11 +1,11 @@
 import Fastify from 'fastify';
-import routes from './api';
-import logger from './core/logger';
-import config from './core/config';
-import devRoutes from './api/_dev';
+import routes from './api/index.js';
+import logger from './core/logger.js';
+import config from './core/config.js';
+import devRoutes from './api/_dev.js';
 
 export async function setupServer() {
-    const server = Fastify({
+    const server = Fastify.default({
         logger: config.isProduction
         ? true
         : {

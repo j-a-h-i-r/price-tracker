@@ -1,7 +1,7 @@
-import { ProductJob } from '../types/product.types';
-import { ProductService } from './product.service';
-import logger from '../core/logger';
-import { queueEvent } from '../events';
+import { ExternalManufacturer, ExternalProduct, ProductJob } from '../types/product.types.js';
+import { ProductService } from './product.service.js';
+import logger from '../core/logger.js';
+import { queueEvent, parseEvent } from '../events.js';
 
 export class QueueProcessor {
     private jobs: ProductJob[] = [];
@@ -25,6 +25,71 @@ export class QueueProcessor {
             this.jobs.push(job);
             await this.processIfNeeded();
         });
+
+        parseEvent.subscribe(async (totalScrapedProducts: number) => {
+            logger.info(`Parsing done. Scraped ${totalScrapedProducts} products`);
+            await this.processScrapedProducts();
+        });
+    }
+
+    private async processScrapedProducts() {
+        // Scraping session is done.
+        // First let's normalize the manufacturers
+        logger.info('Normalizing manufacturers');
+        const externalManufacturers = await this.productService.getExternalManufacturers();
+        // Manufacturers that don't have an associated internal manufacturer
+        const unprocessedManufacturers = externalManufacturers.filter((manufacturer) => !manufacturer.manufacturer_id);
+        const manufacturerNames = unprocessedManufacturers.map((manufacturer) => manufacturer.name.toLowerCase());
+        const distinctManufacturers = [...new Set(manufacturerNames)];
+        // Save the manufacturers in the DB (with lowercased names)
+        if (distinctManufacturers.length > 0) {
+            await this.productService.saveManufacturers(distinctManufacturers);
+        }
+        // Associate the external manufacturers with the internal manufacturers
+        await this.productService.associateExternalManufacturers()
+
+        const externalProducts = await this.productService.getExternalProducts();
+        // Products that don't have an associated internal product
+        const unprocessedExternalProducts = externalProducts.filter((product) => !product.internal_product_id);
+        logger.info(`Got ${externalProducts.length} external products without internal product id`);
+        const toSave = unprocessedExternalProducts.map((product) => this.processExternalProduct(product));
+        logger.info(`Saving ${toSave.length} internal products`);
+        await this.productService.saveInternalProducts(toSave);
+        logger.info('Internal products saved');
+        logger.info('Associating products');
+        await this.productService.associateProducts();
+        logger.info('Products associated');
+    }
+
+    private async getManufacturersMap(): Promise<Map<string, number>> {
+        const manufacturers = await this.productService.getManufacturers();
+        const map =  new Map<string, number>();
+        manufacturers.forEach((manufacturer) => {
+            map.set(manufacturer.name, manufacturer.id);
+        });
+        return map
+    }
+
+    private processExternalProduct(product: ExternalProduct) {
+        return {
+            name: product.name,
+            category_id: product.category_id,
+            metadata: this.processMetadata(product),
+        };
+    }
+
+    // TODO: Implement this method
+    private processMetadata(product: ExternalProduct): Record<string, string> {
+        if (product.category_id === 3) {
+            return this.processTabletMetadata(product.metadata);
+        } else {
+            return product.metadata;
+        }
+    }
+
+    // TODO: Implement this method
+    private processTabletMetadata(metadata: Record<string, string>): Record<string, string> {
+        return metadata;
     }
 
     private async processIfNeeded(): Promise<void> {
@@ -93,8 +158,12 @@ export class QueueProcessor {
             this.jobs = this.jobs.slice(this.BATCH_SIZE);
             
             // Save the manufacturers in DB
-            await this.processAndPersistManufacturers(products);
-            const savedProducts = await this.productService.saveExternalProducts(products);
+            const manufacturersMap = await this.processAndPersistExternalManufacturers(products);
+            const productsWithManufacturerIds = products.map((product) => ({
+                ...product,
+                external_manufacturer_id: manufacturersMap.get(product.website_id)!.get(product.manufacturer)!,
+            }));
+            const savedProducts = await this.productService.saveExternalProducts(productsWithManufacturerIds);
             await this.productService.savePrices(savedProducts);
 
             logger.info(`Successfully processed batch of ${products.length} products`);
@@ -106,14 +175,34 @@ export class QueueProcessor {
         }
     }
 
-    private async processAndPersistManufacturers(products: ProductJob[]) {
-        const manufacturers = products.map((product) => product.manufacturer);
-        const distinctManufacturers = [...new Set(manufacturers)];
-        const savedManufacturers = await this.productService.saveManufacturers(distinctManufacturers);
-        const manufacturersMap = new Map<string, number>();
-        savedManufacturers.forEach((manufacturer) => {          
-            manufacturersMap.set(manufacturer.name, manufacturer.id);
+    private async processAndPersistExternalManufacturers(products: ProductJob[]) {
+        const manufacturersPerWebsite = new Map<number, Set<string>>();
+        products.forEach((product) => {
+            if (!manufacturersPerWebsite.has(product.website_id)) {
+                manufacturersPerWebsite.set(product.website_id, new Set());
+            }
+            manufacturersPerWebsite.get(product.website_id)!.add(product.manufacturer);
+        })
+        const distinctManufacturers: Omit<ExternalManufacturer, 'id'>[] = [];
+        manufacturersPerWebsite.forEach((manufacturers, website_id) => {
+            manufacturers.forEach((manufacturer) => {
+                distinctManufacturers.push({
+                    name: manufacturer,
+                    website_id,
+                });
+            })
         });
-        return manufacturersMap;
+        console.log(distinctManufacturers);
+        // Save the manufacturers in the DB
+        const saved = await this.productService.saveExternalManufacturers(distinctManufacturers);
+        const manufacturersWebsiteMap = new Map<number, Map<string, number>>();
+        saved.forEach((manufacturer) => {
+            const { website_id, name, id } = manufacturer;
+            if (!manufacturersWebsiteMap.has(website_id)) {
+                manufacturersWebsiteMap.set(website_id, new Map());
+            }
+            manufacturersWebsiteMap.get(website_id)!.set(name, id);
+        });
+        return manufacturersWebsiteMap;
     }
 }

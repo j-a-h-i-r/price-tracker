@@ -1,5 +1,5 @@
-import { CategoryName } from '../constants';
-import { ScrapeConsumer } from './scrape-events';
+import { CategoryName } from '../constants.js';
+import { ScrapeConsumer } from './scrape-events.js';
 
 export interface ScrapedProduct {
     name: string

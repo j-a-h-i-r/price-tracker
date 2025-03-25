@@ -26,6 +26,23 @@ export default async function routes(fastify: FastifyInstance, options: any) {
             .from('internal_products');
     });
 
+    fastify.get('/:id/matches', async (req, res) => {
+        // figure out external products across all websites that are possibly the same product
+        // based on product name
+        const id = req.params?.id;
+        const product = await knex('external_products')
+            .where('id', id)
+            .first();
+        const { name, website_id, internal_product_id, category_id } = product;
+        return knex
+            .select('id', 'name', 'website_id', knex.raw('similarity(ep.name, ?) AS similarity', [name]))
+            .from('external_products AS ep')
+            .where(knex.raw('ep.name % ?', [name]))
+            .andWhere('ep.website_id', '<>', website_id)
+            .andWhere('ep.category_id', '=', category_id)
+            .orderBy('similarity', 'desc');
+    });
+
     // Get all prices for a product with optional date range and limit
     fastify.get<{ Params: PriceParams; Querystring: PriceQuery }>(
         '/:id/prices',
