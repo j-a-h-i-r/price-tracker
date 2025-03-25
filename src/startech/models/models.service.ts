@@ -1,6 +1,6 @@
-import logger from '../../core/logger';
-import * as gpuService from '../service';
-import * as gpuModelStorage from './models.storage';
+import logger from '../../core/logger.js';
+import * as gpuService from '../service.js';
+import * as gpuModelStorage from './models.storage.js';
 
 export async function getGpuModels() {
     return gpuModelStorage.retrieveAllModels();
@@ -60,7 +60,6 @@ export async function getPossibleGpuModels() {
         }
         const possibleModels = gpuName.match(gpuModelRegex);
         const model = possibleModels;
-        console.log('model', possibleModels);
         return {
             manufacturer,
             model,

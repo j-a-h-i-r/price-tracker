@@ -9,7 +9,7 @@ export class Techland extends BaseScraper {
     readonly categories: CategoryLink[] = [
         // {  category: 'Laptop', url: 'https://www.techlandbd.com/brand-laptops' },
         // {  category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' }, 
-        {  category: 'Phone', url: 'https://www.techlandbd.com/smartphone-and-tablet/smartphone' },
+        // {  category: 'Phone', url: 'https://www.techlandbd.com/smartphone-and-tablet/smartphone' },
         // {  category: 'Monitor', url: 'https://www.techlandbd.com/monitor-and-display/computer-monitor' },
         {  category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
     ];
@@ -40,8 +40,6 @@ export class Techland extends BaseScraper {
 
     async parseProductPage(pageUrl: string): Promise<ScrapedProduct> {
         logger.debug(`Scraping ${pageUrl}`);
-        // await this.waitIfNeeded();
-        await this.jitterWait();
 
         const req = await axios.get(pageUrl);
         const $ = cheerio.load(req.data);
@@ -82,12 +80,13 @@ export class Techland extends BaseScraper {
         const pageCount = this.parsePageCount(firstPageHtml);
         const products: ScrapedProduct[] = [];
 
+        const throttledCall = this.throttle(this.parseProductPage.bind(this));
+
         for (let i = 1; i <= pageCount; i++) {
             const html = await this.fetchListingPageHtml(category, i);
             const pageLinks = this.parsePageLinks(html);
             logger.debug(`Found ${pageLinks.length} products on page ${i}`);
-            console.log(pageLinks);
-            const pageProducts = await Promise.all(pageLinks.map(link => this.parseProductPage(link)));
+            const pageProducts = await Promise.all(pageLinks.map(link => throttledCall(link)));
             products.push(...pageProducts);
         }
         logger.info(`Scraped ${products.length} products from ${category}`);

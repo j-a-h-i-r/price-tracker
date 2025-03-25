@@ -1,8 +1,8 @@
 import cron from 'node-cron';
-import { startScraping } from '.';
-import { QueueProcessor } from './services/queue.processor';
-import logger from './core/logger';
-import config from './core/config';
+import { startScraping } from './index.js';
+import { QueueProcessor } from './services/queue.processor.js';
+import logger from './core/logger.js';
+import config from './core/config.js';
 
 export async function setupEverything() {
     logger.info('Setting up stuff');

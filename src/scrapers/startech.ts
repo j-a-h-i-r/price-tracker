@@ -8,12 +8,12 @@ export class StarTech extends BaseScraper {
     readonly categories: CategoryLink[] = [
         // {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
         // {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
-        {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
+        // {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
         // {  category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
         // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
-        {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
+        // {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
         // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
-        // {  category: 'Keyboard', url: 'https://www.startech.com.bd/accessories/keyboards', },
+        {  category: 'Keyboard', url: 'https://www.startech.com.bd/accessories/keyboards', },
     ];
 
     private async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
@@ -61,8 +61,6 @@ export class StarTech extends BaseScraper {
 
     async parseProductPage(pageUrl: string): Promise<ScrapedProduct> {
         logger.debug(`Scraping ${pageUrl}`);
-        // await this.waitIfNeeded();
-        await this.jitterWait();
 
         const req = await axios.get(pageUrl);
         const $ = cheerio.load(req.data);

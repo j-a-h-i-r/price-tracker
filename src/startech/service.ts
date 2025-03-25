@@ -1,10 +1,10 @@
 import dayjs from 'dayjs';
-import * as gpuStorage from './storage';
-import type { Gpu, GpuPriceChange, GpuWithPrice } from '../types';
-import type * as dbTypes from '../types/db';
-import * as util from '../core/util';
-import emailer from '../core/email';
-import logger from '../core/logger';
+import * as gpuStorage from './storage.js';
+import type { Gpu, GpuPriceChange, GpuWithPrice } from '../types/index.js';
+import type * as dbTypes from '../types/db.js';
+import * as util from '../core/util.js';
+import emailer from '../core/email.js';
+import logger from '../core/logger.js';
 
 export async function getGpus(filter: any) {
     // Ignore unknown properties
@@ -104,8 +104,6 @@ export async function getLatestGpuChanges(): Promise<GpuPriceChange[]> {
         if (gpu1.priceDiff > gpu2.priceDiff) return 1;
         return 0;
     });
-
-    console.log(updatesFormatted);
 
     return updatesFormatted;
 }
