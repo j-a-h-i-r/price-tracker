@@ -1,7 +1,7 @@
 {
-  "name": "gpu-price",
+  "name": "price-tracker",
   "version": "1.0.0",
-  "description": "Scripts for getting alerts on GPU price or availability changes",
+  "description": "Scripts for tracking prices of products",
   "private": true,
   "exports": "./index.ts",
   "type": "module",
