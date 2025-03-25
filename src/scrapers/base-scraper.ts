@@ -16,7 +16,7 @@ export abstract class BaseScraper implements Scraper {
     protected readonly throttle = pThrottle({
         limit: 100,     // 100 requests per second
         interval: 1000,
-    })
+    });
 
     abstract scrapeCategory(category: string): Promise<ScrapedProduct[]>;
 

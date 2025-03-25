@@ -1,6 +1,6 @@
-import { GpuWithPrice } from '../types';
-import { parseCardDiv, parseListingPage, parsePageCount } from './parse';
-import { fetchAllListingHtml, fetchListingPageHtml } from './scrape';
+import { GpuWithPrice } from '../types/index.js';
+import { parseCardDiv, parseListingPage, parsePageCount } from './parse.js';
+import { fetchAllListingHtml, fetchListingPageHtml } from './scrape.js';
 
 async function parseProducts(): Promise<GpuWithPrice[]> {
     const oneListingPage = await fetchListingPageHtml(1);
@@ -8,9 +8,9 @@ async function parseProducts(): Promise<GpuWithPrice[]> {
     const gpuListingPages = await fetchAllListingHtml(numPages);
 
     const products: GpuWithPrice[] = [];
-    gpuListingPages.forEach((listingPage) => {
+    gpuListingPages.forEach((listingPage: any) => {
         const productDivs = parseListingPage(listingPage);
-        productDivs.forEach((productDiv) => {
+        productDivs.forEach((productDiv: any) => {
             const gpu = parseCardDiv(productDiv);
             products.push(gpu);
         });

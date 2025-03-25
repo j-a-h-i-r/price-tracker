@@ -46,7 +46,7 @@ export class QueueProcessor {
             await this.productService.saveManufacturers(distinctManufacturers);
         }
         // Associate the external manufacturers with the internal manufacturers
-        await this.productService.associateExternalManufacturers()
+        await this.productService.associateExternalManufacturers();
 
         const externalProducts = await this.productService.getExternalProducts();
         // Products that don't have an associated internal product
@@ -67,7 +67,7 @@ export class QueueProcessor {
         manufacturers.forEach((manufacturer) => {
             map.set(manufacturer.name, manufacturer.id);
         });
-        return map
+        return map;
     }
 
     private processExternalProduct(product: ExternalProduct) {
@@ -182,7 +182,7 @@ export class QueueProcessor {
                 manufacturersPerWebsite.set(product.website_id, new Set());
             }
             manufacturersPerWebsite.get(product.website_id)!.add(product.manufacturer);
-        })
+        });
         const distinctManufacturers: Omit<ExternalManufacturer, 'id'>[] = [];
         manufacturersPerWebsite.forEach((manufacturers, website_id) => {
             manufacturers.forEach((manufacturer) => {
@@ -190,7 +190,7 @@ export class QueueProcessor {
                     name: manufacturer,
                     website_id,
                 });
-            })
+            });
         });
         // Save the manufacturers in the DB
         const saved = await this.productService.saveExternalManufacturers(distinctManufacturers);

@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { knex } from '../core/db';
+import { knex } from '../core/db.js';
 
 type GpuQuery = { name?: string, url?: string, slug?: string, website?: string };
 
@@ -26,7 +26,7 @@ export default async function routes(fastify: FastifyInstance, options: any) {
             .from('internal_products');
     });
 
-    fastify.get('/:id/matches', async (req, res) => {
+    fastify.get<{ Params: { id: string } }>('/:id/matches', async (req, res) => {
         // figure out external products across all websites that are possibly the same product
         // based on product name
         const id = req.params?.id;

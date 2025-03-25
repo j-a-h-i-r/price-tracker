@@ -18,8 +18,8 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         return gpuModelService.getGpuModels();
     });
 
-    fastify.get('/:id', async (req, res) => {
-        const modelId = req.params?.id;
+    fastify.get('/:id', async (req: FastifyRequest<{ Params: { id: string } }>, res) => {
+        const modelId = req.params.id;
         
         return gpuModelService.getGpuModel(modelId);
     });
@@ -101,8 +101,8 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         return gpuPrices;
     });
 
-    fastify.get('/:modelid/discovery', async(req, res) => {
-        const modelId = req.params.modelid;
+    fastify.get('/:modelid/discovery', async(req: FastifyRequest<{ Params: { modelid: string } }>, res) => {
+        const modelId = Number(req.params.modelid);
         return gpuModelService.getModelDiscovery(modelId);
     });
 }

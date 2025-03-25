@@ -1,5 +1,5 @@
 import Knex from 'knex';
-import config from './config';
+import config from './config.js';
 
 export const knex = Knex({
     client: 'postgres',

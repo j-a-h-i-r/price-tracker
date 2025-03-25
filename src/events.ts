@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import logger from './core/logger';
 
 class BaseEvent {
     event: EventEmitter;

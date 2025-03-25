@@ -1,10 +1,10 @@
-import emailer from '../core/email';
-import logger from '../core/logger';
-import { parseEvent } from '../events';
-import type { GpuPriceChange } from '../types';
-import { getGpuEmailSubscribers, getLatestGpuChanges } from './service';
-import config from '../core/config';
-import { postToPage } from '../core/fb';
+import emailer from '../core/email.js';
+import logger from '../core/logger.js';
+import { parseEvent } from '../events.js';
+import type { GpuPriceChange } from '../types/index.js';
+import { getGpuEmailSubscribers, getLatestGpuChanges } from './service.js';
+import config from '../core/config.js';
+import { postToPage } from '../core/fb.js';
 
 export async function sendEmailOnGpuPriceAvailablityChange() {
     try {

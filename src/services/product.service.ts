@@ -75,7 +75,7 @@ export class ProductService {
 
     async getManufacturers(): Promise<Manufacturer[]> {
         return knex<Manufacturer>('manufacturers')
-            .select('*')
+            .select('*');
     }
 
     async saveManufacturers(manufacturers: string[]): Promise<Manufacturer[]> {

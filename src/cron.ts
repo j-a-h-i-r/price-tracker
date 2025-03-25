@@ -1,10 +1,10 @@
 import cron from 'node-cron';
-import logger from './core/logger';
-import config from './core/config';
+import logger from './core/logger.js';
+import config from './core/config.js';
 import dayjs from 'dayjs';
-import { parseEvent } from './events';
-import { parseProducts } from './startech';
-import { saveGpus, saveGpuPrices } from './startech/service';
+import { parseEvent } from './events.js';
+import { parseProducts } from './startech/index.js';
+import { saveGpus, saveGpuPrices } from './startech/service.js';
 
 const cronScheduleString = `0 */${config.scrapeHourInterval} * * *`;
 logger.debug('Cron Schedule %s', cronScheduleString);

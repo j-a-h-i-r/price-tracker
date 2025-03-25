@@ -1,5 +1,5 @@
-import { knex } from '../../core/db';
-import type * as dbTypes from '../../types/db';
+import { knex } from '../../core/db.js';
+import type * as dbTypes from '../../types/db.js';
 
 const GPUS_TABLE = 'gpus';
 const GPU_MODELS_TABLE = 'gpu_models';

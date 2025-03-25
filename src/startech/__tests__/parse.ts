@@ -1,7 +1,7 @@
 import { describe, test, expect } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
-import { parseListingPage, parseCardDiv, parsePageCount } from '../parse';
+import { parseListingPage, parseCardDiv, parsePageCount } from '../parse.js';
 
 const listingPagePath = path.join(__dirname, '../__mocks__/listing-page.html');
 const cardDivPath = path.join(__dirname, '../__mocks__/card-div.html');

@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { GpuWithPrice } from '../types';
+import { GpuWithPrice } from '../types/index.js';
 
 function parsePageCount(listingHtml: string): number {
     const $ = cheerio.load(listingHtml);

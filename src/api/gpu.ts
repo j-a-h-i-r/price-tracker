@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import * as gpuService from '../startech/service';
-import { sendEmailOnGpuPriceAvailablityChange } from '../startech/events';
+import * as gpuService from '../startech/service.js';
+import { sendEmailOnGpuPriceAvailablityChange } from '../startech/events.js';
 import dayjs from 'dayjs';
 
 type GpuQuery = { name?: string, url?: string, slug?: string, website?: string };
