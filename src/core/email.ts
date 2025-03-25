@@ -1,5 +1,5 @@
 import Email from 'email-templates';
-import config from './config';
+import config from './config.js';
 
 const emailer = new Email({
     message: {

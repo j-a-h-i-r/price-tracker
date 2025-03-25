@@ -1,7 +1,7 @@
-import { GpuPriceChange } from '../../types';
+import { GpuPriceChange } from '../../types/index.js';
 import {
     prepareFormattedMessageForPostingToFacebook
-} from '../events';
+} from '../events.js';
 
 describe('Test facebook message posting', () => {
     test('Correct formatting for no GPU change', () => {

@@ -1,10 +1,10 @@
 import pino from 'pino';
-import config from './config';
+import config from './config.js';
 
 const DEFAULT_LOG_LEVEL = config.isProduction ? 'info' : 'debug';
 const LOG_LEVEL = process.env.LOG_LEVEL || DEFAULT_LOG_LEVEL;
 
-export const logger = pino({
+export const logger = pino.default({
     level: LOG_LEVEL,
     enabled: true,
     transport: !config.isProduction

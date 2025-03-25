@@ -1,6 +1,6 @@
-import { knex } from '../core/db';
-import type { ExceptId, Gpu } from '../types';
-import type * as dbTypes from '../types/db';
+import { knex } from '../core/db.js';
+import type { ExceptId, Gpu } from '../types/index.js';
+import type * as dbTypes from '../types/db.js';
 
 const GPUS_TABLE = 'gpus';
 const GPU_PRICES_TABLES = 'gpu_prices';
@@ -42,7 +42,7 @@ export async function retrieveGpuPrices(gpuId: number, filter?: { startDate: Dat
         .select()
         .where({ gpuid: gpuId })
         .andWhere('price', '>', 0)
-        .modify((builder) => {
+        .modify((builder: any) => {
             if (filter?.startDate) builder.andWhere('updated_at', '>=', filter.startDate);
             if (filter?.endDate) builder.andWhere('updated_at', '<=', filter.endDate);
         })
