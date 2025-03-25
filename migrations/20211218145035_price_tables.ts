@@ -20,6 +20,19 @@ export async function up(knex: Knex): Promise<void> {
         table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
         table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
     })
+    .createTable('external_manufacturers', (table) => {
+        // Since the manufacturer strings are coming from the external websites,
+        // we need a separate place to store those. Otherwise they'll keep
+        // getting merged into the manufacturers table.
+        table.comment('Stores the manufacturers of the products from the external websites');
+        table.increments('id').primary();
+        table.text('name').notNullable();
+        table.integer('website_id').notNullable();
+        table.integer('manufacturer_id').nullable();
+        table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
+        table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
+        table.unique(['name', 'website_id']);
+    })
     .createTable('categories', (table) => {
         table.comment('Stores the internal categories of the products');
         table.integer('id').primary();      // The id is manually set
@@ -44,6 +57,7 @@ export async function up(knex: Knex): Promise<void> {
         table.integer('internal_product_id').nullable();
         table.integer('category_id').notNullable();
         table.integer('website_id').notNullable();
+        table.integer('external_manufacturer_id').nullable();
         table.text('name').notNullable();
         table.text('url').notNullable().unique();
         table.jsonb('metadata').defaultTo('{}');
@@ -90,6 +104,7 @@ export async function down(knex: Knex): Promise<void> {
     return knex.schema
     .dropTable('websites')
     .dropTable('manufacturers')
+    .dropTable('external_manufacturers')
     .dropTable('categories')
     .dropTable('internal_products')
     .dropTable('external_products')

@@ -1,5 +1,5 @@
-import { StarTech, StartTechWebsite } from './startech';
-import { Techland, TechlandWebsite } from './techland';
+import { StarTech, StartTechWebsite } from './startech.js';
+import { Techland, TechlandWebsite } from './techland.js';
 
 export const scrapers = [
     {
@@ -12,5 +12,5 @@ export const scrapers = [
     }
 ];
 
-export * from './scraper.types';
-export * from './scrape-events';
+export * from './scraper.types.js';
+export * from './scrape-events.js';

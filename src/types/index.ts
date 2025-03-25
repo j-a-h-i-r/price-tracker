@@ -1,4 +1,4 @@
-import type * as dbTypes from './db';
+import type * as dbTypes from './db.js';
 
 export interface Gpu {
     id?: number

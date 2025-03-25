@@ -1,15 +1,15 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { BaseScraper, CategoryLink } from './base-scraper';
-import { ScrapedProduct, Website } from './scraper.types';
-import logger from '../core/logger';
+import { BaseScraper, CategoryLink } from './base-scraper.js';
+import { ScrapedProduct, Website } from './scraper.types.js';
+import logger from '../core/logger.js';
 
 export class StarTech extends BaseScraper {
     readonly categories: CategoryLink[] = [
         // {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
         // {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
-        // {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
-        {  category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
+        {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
+        // {  category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
         // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
         {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
         // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
@@ -46,10 +46,12 @@ export class StarTech extends BaseScraper {
         const pageCount = this.parsePageCount(firstPageHtml);
         const products: ScrapedProduct[] = [];
 
+        const throttledCall = this.throttle(this.parseProductPage.bind(this));
+
         for (let i = 1; i <= pageCount; i++) {
             const html = await this.fetchListingPageHtml(category, i);
             const pageLinks = this.parsePageLinks(html);
-            const pageProducts = await Promise.all(pageLinks.map(link => this.parseProductPage(link)));
+            const pageProducts = await Promise.all(pageLinks.map(link => throttledCall(link)));
             products.push(...pageProducts);
         }
 
