@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import * as gpuModelService from '../startech/models/models.service';
-import logger from '../core/logger';
-import config from '../core/config';
+import * as gpuModelService from '../startech/models/models.service.js';
+import logger from '../core/logger.js';
+import config from '../core/config.js';
 
 interface ModelManageQuery {
     token: string;
@@ -40,7 +40,6 @@ export default async function routes(fastify: FastifyInstance, options: any) {
             return res.code(403)
                     .send({success: false, error: 'This operation is not permitted'});
         }
-        console.log('models payload', modelid, modelname, gpuids);
         return gpuModelService.insertGpuModels(Number(modelid), modelname, gpuids);
     });
 

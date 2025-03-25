@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { postToFacebook } from '../startech/events';
-import { getLatestGpuChanges } from '../startech/service';
+import { postToFacebook } from '../startech/events.js';
+import { getLatestGpuChanges } from '../startech/service.js';
 
 export default async function routes(fastify: FastifyInstance, options: any) {
     fastify.get('/triggerfbpost', async (req: FastifyRequest, res) => {

@@ -192,7 +192,6 @@ export class QueueProcessor {
                 });
             })
         });
-        console.log(distinctManufacturers);
         // Save the manufacturers in the DB
         const saved = await this.productService.saveExternalManufacturers(distinctManufacturers);
         const manufacturersWebsiteMap = new Map<number, Map<string, number>>();

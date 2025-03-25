@@ -3,6 +3,7 @@ import { ScrapeConsumer, ScrapeProducer } from './scrape-events.js';
 import logger from '../core/logger.js';
 import { CategoryName } from '../constants.js';
 import pThrottle from 'p-throttle';
+import config from '../core/config.js';
 
 export interface CategoryLink {
     category: CategoryName;
@@ -11,47 +12,11 @@ export interface CategoryLink {
 
 export abstract class BaseScraper implements Scraper {
     protected abstract readonly categories: CategoryLink[];
-    protected requestCount = 0;
-    // Request limit before we need to wait
-    protected readonly REQUEST_LIMIT = 200;
-    // Wait time in milliseconds
-    protected readonly WAIT_FOR_MS = 5 * 1000;
 
     protected readonly throttle = pThrottle({
         limit: 100,     // 100 requests per second
         interval: 1000,
     })
-
-    /**
-     * Helper function to wait for a given number of milliseconds
-     * @param milliseconds 
-     * @returns 
-     */
-    protected wait(milliseconds: number) {
-        return new Promise(resolve => setTimeout(resolve, milliseconds));
-    }
-
-    protected jitterWait() {
-        const jitter = Math.floor(Math.random() * 500);
-        return this.wait(jitter);
-    }
-
-    
-    /**
-     * Helper function to check if we need to wait. If we go over the request limit
-     * this should automatically wait.
-     * Call it before making any request that should be limited.
-     * @returns 
-     */
-    protected waitIfNeeded() {
-        this.requestCount += 1;
-        if (this.requestCount >= this.REQUEST_LIMIT) {
-            this.requestCount = 0;
-            logger.info(`Waiting for ${this.WAIT_FOR_MS}ms`);
-            return this.wait(this.WAIT_FOR_MS);
-        }
-        return Promise.resolve();
-    }
 
     abstract scrapeCategory(category: string): Promise<ScrapedProduct[]>;
 
@@ -73,6 +38,7 @@ export abstract class BaseScraper implements Scraper {
                 producer.emitComplete(allProducts);
                 producer.removeListeners();
             } catch (error) {
+                logger.error(error, 'Failed to scrape');
                 producer.emitError(error as Error);
                 producer.removeListeners();
             }
