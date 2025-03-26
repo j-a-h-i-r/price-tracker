@@ -26,7 +26,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "migrate": "knex migrate:latest",
-    "db:prod": "npm-run-all migrate:prod seed:prod",
+    "db:prod": "npm run migrate:prod && npm run seed:prod",
     "migrate:prod": "knex --cwd dist --env production migrate:latest",
     "seed:prod": "knex --cwd dist --env production seed:run"
   },
