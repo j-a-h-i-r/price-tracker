@@ -123,4 +123,66 @@ export class ProductService {
                 and ep.internal_product_id is null;
         `);
     }
+
+    /**
+     * Store new external manufacturers into the manufacturers table
+     * and associate them with internal manufacturers
+     */
+    async syncManufacturers(): Promise<void> {
+        await knex.transaction(async (trx) => {
+            // First store the raw manufacturers into the manufacturers table
+            // But we only store the ones that don't have an associated internal manufacturer
+            await trx.raw(`
+                INSERT INTO manufacturers (name)
+                SELECT em.name
+                FROM external_manufacturers em
+                WHERE em.manufacturer_id IS NULL
+                ON CONFLICT (name) DO NOTHING;
+            `);
+
+            // Now basically sync back the external manufacturers that we just inserted
+            // so they are tracked as well
+            await trx.raw(`
+                UPDATE external_manufacturers em
+                SET manufacturer_id = m.id
+                FROM manufacturers m
+                WHERE
+                    em.name = m.name
+                    and em.manufacturer_id IS NULL;
+            `);
+        });
+    }
+
+
+    /**
+     * Store new external products into the products table
+     * and associate them with internal products
+     */
+    async syncProducts(): Promise<void> {
+        await knex.transaction(async (trx) => {
+            // Store the raw products into the inner products table
+            // Only store the ones that don't have an associated internal product
+            await trx.raw(`
+                INSERT INTO internal_products (name, category_id, manufacturer_id, metadata)
+                SELECT ep.name, ep.category_id, em.manufacturer_id, ep.metadata
+                FROM external_products ep
+                    INNER JOIN external_manufacturers em 
+                        ON ep.external_manufacturer_id = em.id and ep.website_id = em.website_id
+                WHERE ep.internal_product_id IS NULL
+                ON CONFLICT DO NOTHING;
+            `);
+
+            // Now basically sync back the external products that we just inserted
+            // so they are tracked as well
+            await trx.raw(`
+                UPDATE external_products ep
+                SET internal_product_id = ip.id
+                FROM internal_products ip
+                WHERE
+                    ep.name = ip.name
+                    and ep.category_id = ip.category_id
+                    and ep.internal_product_id is null;
+            `);
+        });
+    }
 }
