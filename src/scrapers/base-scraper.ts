@@ -3,7 +3,6 @@ import { ScrapeConsumer, ScrapeProducer } from './scrape-events.js';
 import logger from '../core/logger.js';
 import { CategoryName } from '../constants.js';
 import pThrottle from 'p-throttle';
-import config from '../core/config.js';
 
 export interface CategoryLink {
     category: CategoryName;
@@ -15,7 +14,7 @@ export abstract class BaseScraper implements Scraper {
 
     protected readonly throttle = pThrottle({
         limit: 100,     // 100 requests per second
-        interval: 1000,
+        interval: 5000, // 5 seconds delay between requests
     });
 
     abstract scrapeCategory(category: string): Promise<ScrapedProduct[]>;

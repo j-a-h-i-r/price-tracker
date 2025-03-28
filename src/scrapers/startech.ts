@@ -6,13 +6,13 @@ import logger from '../core/logger.js';
 
 export class StarTech extends BaseScraper {
     readonly categories: CategoryLink[] = [
-        // {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
-        // {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
-        // {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
-        // {  category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
-        // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
-        // {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
-        // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
+        {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
+        {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
+        {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
+        {  category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
+        {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
+        {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
+        {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
         {  category: 'Keyboard', url: 'https://www.startech.com.bd/accessories/keyboards', },
     ];
 

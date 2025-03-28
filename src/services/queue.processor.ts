@@ -32,33 +32,23 @@ export class QueueProcessor {
         });
     }
 
+    // TODO: Run this method on a schedule
     private async processScrapedProducts() {
         // Scraping session is done.
         // First let's normalize the manufacturers
-        logger.info('Normalizing manufacturers');
-        const externalManufacturers = await this.productService.getExternalManufacturers();
-        // Manufacturers that don't have an associated internal manufacturer
-        const unprocessedManufacturers = externalManufacturers.filter((manufacturer) => !manufacturer.manufacturer_id);
-        const manufacturerNames = unprocessedManufacturers.map((manufacturer) => manufacturer.name.toLowerCase());
-        const distinctManufacturers = [...new Set(manufacturerNames)];
-        // Save the manufacturers in the DB (with lowercased names)
-        if (distinctManufacturers.length > 0) {
-            await this.productService.saveManufacturers(distinctManufacturers);
+        try {
+            logger.info('Syncing external and internal manufacturers');
+            await this.productService.syncManufacturers();
+        } catch (error) {
+            logger.error(error, 'Failed to sync manufacturers');
         }
-        // Associate the external manufacturers with the internal manufacturers
-        await this.productService.associateExternalManufacturers();
 
-        const externalProducts = await this.productService.getExternalProducts();
-        // Products that don't have an associated internal product
-        const unprocessedExternalProducts = externalProducts.filter((product) => !product.internal_product_id);
-        logger.info(`Got ${externalProducts.length} external products without internal product id`);
-        const toSave = unprocessedExternalProducts.map((product) => this.processExternalProduct(product));
-        logger.info(`Saving ${toSave.length} internal products`);
-        await this.productService.saveInternalProducts(toSave);
-        logger.info('Internal products saved');
-        logger.info('Associating products');
-        await this.productService.associateProducts();
-        logger.info('Products associated');
+        try {
+            logger.info('Syncing external products');
+            await this.productService.syncProducts();
+        } catch (error) {
+            logger.error(error, 'Failed to sync external products');
+        }
     }
 
     private async getManufacturersMap(): Promise<Map<string, number>> {
