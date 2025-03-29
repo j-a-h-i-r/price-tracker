@@ -3,6 +3,7 @@ import { ScrapeConsumer, ScrapeProducer } from './scrape-events.js';
 import logger from '../core/logger.js';
 import { CategoryName } from '../constants.js';
 import pThrottle from 'p-throttle';
+import axios from 'axios';
 
 export interface CategoryLink {
     category: CategoryName;
@@ -16,6 +17,21 @@ export abstract class BaseScraper implements Scraper {
         limit: 100,     // 100 requests per second
         interval: 5000, // 5 seconds delay between requests
     });
+
+    /**
+     * A throttled function to make GET requests using axios
+     * @param url The URL to fetch
+     * @returns 
+     */
+    protected axiosGet(url: string) {
+        return this.throttle((url) => {
+            return axios.get(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:136.0) Gecko/20100101 Firefox/136.0'
+                },
+            })
+        })(url);
+    } 
 
     abstract scrapeCategory(category: string): Promise<ScrapedProduct[]>;
 

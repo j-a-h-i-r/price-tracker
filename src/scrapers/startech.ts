@@ -1,4 +1,3 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { BaseScraper, CategoryLink } from './base-scraper.js';
 import { ScrapedProduct, Website } from './scraper.types.js';
@@ -6,19 +5,19 @@ import logger from '../core/logger.js';
 
 export class StarTech extends BaseScraper {
     readonly categories: CategoryLink[] = [
-        {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
-        {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
-        {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
-        {  category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
-        {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
-        {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
-        {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
+        // {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
+        // {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
+        // {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
+        // {  category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
+        // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
+        // {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
+        // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
         {  category: 'Keyboard', url: 'https://www.startech.com.bd/accessories/keyboards', },
     ];
 
     private async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
         const pageUrl = `${url}?page=${pageNumber}`;
-        const req = await axios.get(pageUrl);
+        const req = await this.axiosGet(pageUrl);
         return req.data as string;
     }
 
@@ -46,12 +45,10 @@ export class StarTech extends BaseScraper {
         const pageCount = this.parsePageCount(firstPageHtml);
         const products: ScrapedProduct[] = [];
 
-        const throttledCall = this.throttle(this.parseProductPage.bind(this));
-
         for (let i = 1; i <= pageCount; i++) {
             const html = await this.fetchListingPageHtml(category, i);
             const pageLinks = this.parsePageLinks(html);
-            const pageProducts = await Promise.allSettled(pageLinks.map(link => throttledCall(link)));
+            const pageProducts = await Promise.allSettled(pageLinks.map(link => this.parseProductPage(link)));
             const parsedProducts = pageProducts.map((result) => {
                 if (result.status === 'fulfilled') {
                     return result.value;
@@ -71,7 +68,7 @@ export class StarTech extends BaseScraper {
     async parseProductPage(pageUrl: string): Promise<ScrapedProduct> {
         logger.debug(`Scraping ${pageUrl}`);
 
-        const req = await axios.get(pageUrl);
+        const req = await this.axiosGet(pageUrl);
         const $ = cheerio.load(req.data);
         
         return {
