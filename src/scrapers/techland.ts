@@ -86,8 +86,17 @@ export class Techland extends BaseScraper {
             const html = await this.fetchListingPageHtml(category, i);
             const pageLinks = this.parsePageLinks(html);
             logger.debug(`Found ${pageLinks.length} products on page ${i}`);
-            const pageProducts = await Promise.all(pageLinks.map(link => throttledCall(link)));
-            products.push(...pageProducts);
+            const pageProducts = await Promise.allSettled(pageLinks.map(link => throttledCall(link)));
+            const parsedProducts = pageProducts.map(result => {
+                if (result.status === 'fulfilled') {
+                    return result.value;
+                } else {
+                    logger.error(result.reason, `Failed to parse product page`);
+                    return null;
+                }
+            }).filter((product): product is ScrapedProduct => product !== null);
+            logger.debug(`Parsed ${parsedProducts.length} products from page ${i}`);
+            products.push(...parsedProducts);
         }
         logger.info(`Scraped ${products.length} products from ${category}`);
         const productsWithCategory = products.map(product => ({ ...product, category }));
