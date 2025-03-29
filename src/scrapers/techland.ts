@@ -1,7 +1,6 @@
 
 import * as cheerio from 'cheerio';
 import { BaseScraper, CategoryLink } from './base-scraper.js';
-import * as fs from 'fs';
 import { ScrapedProduct, Website } from './scraper.types.js';
 import logger from '../core/logger.js';
 
@@ -89,7 +88,7 @@ export class Techland extends BaseScraper {
                 if (result.status === 'fulfilled') {
                     return result.value;
                 } else {
-                    logger.error(result.reason, `Failed to parse product page`);
+                    logger.error(result.reason, 'Failed to parse product page');
                     return null;
                 }
             }).filter((product): product is ScrapedProduct => product !== null);

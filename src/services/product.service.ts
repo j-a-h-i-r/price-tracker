@@ -1,5 +1,5 @@
 import { knex } from '../core/db.js';
-import { ExternalManufacturer, ExternalProduct, InternalProduct, Manufacturer, ProductJob, ProductWithExternalId, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId } from '../types/product.types.js';
+import { ExternalManufacturer, ExternalProduct, InternalProduct, Manufacturer, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId } from '../types/product.types.js';
 import { Category } from '../constants.js';
 
 export class ProductService {

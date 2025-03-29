@@ -53,7 +53,7 @@ export class StarTech extends BaseScraper {
                 if (result.status === 'fulfilled') {
                     return result.value;
                 } else {
-                    logger.error(result.reason, `Failed to parse product page`);
+                    logger.error(result.reason, 'Failed to parse product page');
                     return null;
                 }
             }).filter((product): product is ScrapedProduct => product !== null);

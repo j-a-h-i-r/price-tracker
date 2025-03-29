@@ -29,7 +29,7 @@ export abstract class BaseScraper implements Scraper {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:136.0) Gecko/20100101 Firefox/136.0'
                 },
-            })
+            });
         })(url);
     } 
 
