@@ -51,8 +51,17 @@ export class StarTech extends BaseScraper {
         for (let i = 1; i <= pageCount; i++) {
             const html = await this.fetchListingPageHtml(category, i);
             const pageLinks = this.parsePageLinks(html);
-            const pageProducts = await Promise.all(pageLinks.map(link => throttledCall(link)));
-            products.push(...pageProducts);
+            const pageProducts = await Promise.allSettled(pageLinks.map(link => throttledCall(link)));
+            const parsedProducts = pageProducts.map((result) => {
+                if (result.status === 'fulfilled') {
+                    return result.value;
+                } else {
+                    logger.error(result.reason, `Failed to parse product page`);
+                    return null;
+                }
+            }).filter((product): product is ScrapedProduct => product !== null);
+            logger.debug(`Found ${parsedProducts.length} products on page ${i}`);
+            products.push(...parsedProducts);
         }
 
         logger.info(`Scraped ${products.length} products from ${category}`);

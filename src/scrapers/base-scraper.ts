@@ -27,9 +27,15 @@ export abstract class BaseScraper implements Scraper {
             try {
                 const results = await Promise.all(
                     this.categories.map(async ({category, url}) => {
-                        const products = await this.scrapeCategory(url);
-                        producer.emit(category, products);
-                        return products;
+                        try {
+                            const products = await this.scrapeCategory(url);
+                            producer.emit(category, products);
+                            return products;
+                        } catch (error) {
+                            logger.error(error, `Failed to scrape category ${category}`);
+                            producer.emitError(error as Error);
+                            return [];
+                        }
                     })
                 );
                 
