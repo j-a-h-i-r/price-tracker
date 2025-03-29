@@ -1,5 +1,4 @@
 import { customAlphabet } from 'nanoid/async';
-import config from './config.js';
 
 const DIGITS = '0123456789';
 const CAPITAL_AND_DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -13,11 +12,4 @@ export function generate6DigitCode(): string {
 
 export function generateAuthCode(): string {
     return alphaNanoid();
-}
-
-export function getRedisConnection() {
-    return {
-        host: config.redis.host,
-        port: Number(config.redis.port),
-    };
 }
