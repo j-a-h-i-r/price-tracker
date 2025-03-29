@@ -3,10 +3,6 @@ const isProduction = NODE_ENV === 'production';
 
 const config = {
     databaseUrl: process.env.DATABASE_URL,
-    redis: {
-        host: process.env.REDIS_HOST,
-        port: process.env.REDIS_PORT,
-    },
     isProduction: isProduction,
     scrapeHourInterval: Number(process.env.SCRAPE_HOUR_INTERVAL) || 2,
     mail: {

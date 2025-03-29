@@ -1,4 +1,4 @@
-import axios from 'axios';
+
 import * as cheerio from 'cheerio';
 import { BaseScraper, CategoryLink } from './base-scraper.js';
 import * as fs from 'fs';
@@ -7,16 +7,16 @@ import logger from '../core/logger.js';
 
 export class Techland extends BaseScraper {
     readonly categories: CategoryLink[] = [
-        {  category: 'Laptop', url: 'https://www.techlandbd.com/brand-laptops' },
-        {  category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' }, 
-        {  category: 'Phone', url: 'https://www.techlandbd.com/smartphone-and-tablet/smartphone' },
-        {  category: 'Monitor', url: 'https://www.techlandbd.com/monitor-and-display/computer-monitor' },
-        {  category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
+        // {  category: 'Laptop', url: 'https://www.techlandbd.com/brand-laptops' },
+        // {  category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' }, 
+        // {  category: 'Phone', url: 'https://www.techlandbd.com/smartphone-and-tablet/smartphone' },
+        // {  category: 'Monitor', url: 'https://www.techlandbd.com/monitor-and-display/computer-monitor' },
+        // {  category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
     ];
 
     private async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
         const pageUrl = `${url}?page=${pageNumber}`;
-        const req = await axios.get(pageUrl);
+        const req = await this.axiosGet(pageUrl);
         return req.data as string;
     }
 
@@ -41,7 +41,7 @@ export class Techland extends BaseScraper {
     async parseProductPage(pageUrl: string): Promise<ScrapedProduct> {
         logger.debug(`Scraping ${pageUrl}`);
 
-        const req = await axios.get(pageUrl);
+        const req = await this.axiosGet(pageUrl);
         const $ = cheerio.load(req.data);
 
         const productInfo: Record<string, string> = {};
@@ -80,13 +80,11 @@ export class Techland extends BaseScraper {
         const pageCount = this.parsePageCount(firstPageHtml);
         const products: ScrapedProduct[] = [];
 
-        const throttledCall = this.throttle(this.parseProductPage.bind(this));
-
         for (let i = 1; i <= pageCount; i++) {
             const html = await this.fetchListingPageHtml(category, i);
             const pageLinks = this.parsePageLinks(html);
             logger.debug(`Found ${pageLinks.length} products on page ${i}`);
-            const pageProducts = await Promise.allSettled(pageLinks.map(link => throttledCall(link)));
+            const pageProducts = await Promise.allSettled(pageLinks.map(link => this.parseProductPage(link)));
             const parsedProducts = pageProducts.map(result => {
                 if (result.status === 'fulfilled') {
                     return result.value;
