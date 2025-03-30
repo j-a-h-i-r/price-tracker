@@ -3,19 +3,18 @@ import routes from './api/index.js';
 import logger from './core/logger.js';
 import config from './core/config.js';
 import devRoutes from './api/_dev.js';
+import { fastifyOtelInstrumentation } from './otel.js';
 
 export async function setupServer() {
-    const server = Fastify.default({
-        logger: config.isProduction
-        ? true
-        : {
-            prettyPrint: {
-                translateTime: true,
-                levelFirst: true,
-                ignore: 'pid,hostname',
-            }
+    const server = Fastify.default(
+        {
+            loggerInstance: logger,
         }
-    });
+    );
+
+    // Register OpenTelemetry instrumentation for Fastify
+    server.register(fastifyOtelInstrumentation.plugin())
+    
 
     server.register(routes, { prefix: '/api' });
 
@@ -24,12 +23,14 @@ export async function setupServer() {
     }
 
     try {
-        const PORT = process.env.PORT ?? 3000;
+        const PORT: number = process.env.PORT ? Number(process.env.PORT) : 3000;
         const address = config.isProduction? '0.0.0.0': undefined;
-        await server.listen(PORT, address);
+        await server.listen({
+            port: PORT,
+            host: address
+        })
     } catch (err) {
-        logger.error('Server failed to start');
-        logger.error(err);
+        logger.error(err, 'Server failed to start');
 
         server.log.error(err);
         process.exit(1);

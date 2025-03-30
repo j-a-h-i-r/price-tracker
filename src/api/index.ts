@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import fastifyHelmet from 'fastify-helmet';
+import fastifyHelmet from '@fastify/helmet';
 import gpuRoutes from './gpu.js';
 import gpuModelRoutes from './model.js';
 import productRoutes from './products.js';

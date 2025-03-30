@@ -1,4 +1,4 @@
-import { customAlphabet } from 'nanoid/async';
+import { customAlphabet } from 'nanoid';
 
 const DIGITS = '0123456789';
 const CAPITAL_AND_DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
