@@ -6,6 +6,7 @@ import { ScrapedProduct, scrapers } from './scrapers/index.js';
 import { setupEverything } from './setup.js';
 import { queueEvent, parseEvent } from './events.js';
 import { categoriesMap } from './constants.js';
+import "./otel.js"
 
 function start() {
     if (config.isProduction) {
