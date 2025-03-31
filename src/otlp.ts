@@ -8,30 +8,32 @@ import {
 import FastifyOtelInstrumentation from '@fastify/otel';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
+import config from './core/config.js';
+import constants from './core/constants.js';
 
-const SIGNOZ_ENDPOINT = 'http://localhost:4318';
-const SERVICE_NAME = 'price-tracker';
-const SERVICE_VERSION = '1.0';
+const SIGNOZ_ENDPOINT = config.signozEndpoint;
 
-const sdk = new NodeSDK({
-  // Register the service name and version
-  resource: resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: SERVICE_NAME,
-    [ATTR_SERVICE_VERSION]: SERVICE_VERSION,
+export const resource = resourceFromAttributes({
+  [ATTR_SERVICE_NAME]: constants.OTLP_SERVICE_NAME,
+  [ATTR_SERVICE_VERSION]: constants.OTLP_SERVICE_VERSION,
+})
+
+const metricReader = new PeriodicExportingMetricReader({
+  exporter: new OTLPMetricExporter({
+    url: `${SIGNOZ_ENDPOINT}/v1/metrics`,
   }),
+})
+
+export const sdk = new NodeSDK({
+  // Register the service name and version
+  resource: resource,
   // OTLPTraceExporter will export tracees to the signoz backend
   traceExporter: new OTLPTraceExporter({
     url: `${SIGNOZ_ENDPOINT}/v1/traces`,
   }),
   // OTLPMetricExporter will export metrics to the signoz backend
-  metricReader: new PeriodicExportingMetricReader({
-    exporter: new OTLPMetricExporter({
-      url: `${SIGNOZ_ENDPOINT}/v1/metrics`,
-    }),
-  }),
+  metricReader: metricReader,
 });
 
-export const fastifyOtelInstrumentation = new FastifyOtelInstrumentation.default({ servername: SERVICE_NAME });
+export const fastifyOtelInstrumentation = new FastifyOtelInstrumentation.default({ servername: constants.OTLP_SERVICE_NAME });
 fastifyOtelInstrumentation.setTracerProvider(opentelemetry.trace.getTracerProvider())
-
-sdk.start();

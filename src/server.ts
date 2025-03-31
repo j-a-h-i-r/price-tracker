@@ -3,7 +3,7 @@ import routes from './api/index.js';
 import logger from './core/logger.js';
 import config from './core/config.js';
 import devRoutes from './api/_dev.js';
-import { fastifyOtelInstrumentation } from './otel.js';
+import { fastifyOtelInstrumentation } from './otlp.js';
 
 export async function setupServer() {
     const server = Fastify.default(

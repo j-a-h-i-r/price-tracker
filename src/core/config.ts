@@ -18,6 +18,7 @@ const config = {
     fbToken: process.env.FB_TOKEN ?? '',
     fbPageId: process.env.FB_PAGE_ID ?? '',
     adminToken: process.env.ADMIN_TOKEN,
+    signozEndpoint: process.env.SIGNOZ_ENDPOINT ?? 'http://localhost:4318',
 };
 
 export default config;

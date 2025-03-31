@@ -3,6 +3,7 @@ import { startScraping } from './index.js';
 import { QueueProcessor } from './services/queue.processor.js';
 import logger from './core/logger.js';
 import config from './core/config.js';
+import { sdk } from './otlp.js'
 
 export async function setupEverything() {
     logger.info('Setting up stuff');
@@ -15,7 +16,7 @@ export async function setupEverything() {
     logger.info('Cron job set up');
     logger.info('Set up everything');
 
-    return { task };
+    return { task, otlpSdk: sdk };
 }
 
 export async function setupCron() {

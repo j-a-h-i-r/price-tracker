@@ -6,12 +6,12 @@ import { ScrapedProduct, scrapers } from './scrapers/index.js';
 import { setupEverything } from './setup.js';
 import { queueEvent, parseEvent } from './events.js';
 import { categoriesMap } from './constants.js';
-import "./otel.js"
 
 function start() {
     if (config.isProduction) {
         setupEverything()
-            .then(({ task }) => {
+            .then(({ task, otlpSdk }) => {
+                otlpSdk.start();
                 task.start();
                 logger.info('Setup completed');
             })
@@ -20,7 +20,8 @@ function start() {
             });
     } else {
         setupEverything()
-            .then(async () => {
+            .then(async ({otlpSdk}) => {
+                otlpSdk.start();
                 await startScraping();
                 logger.info('Scraper triggered once');
             })
