@@ -185,4 +185,10 @@ export class ProductService {
             `);
         });
     }
+
+    async getCategories() {
+        return knex('categories')
+            .select('*')
+            .orderBy('name');
+    }
 }

@@ -16,13 +16,13 @@ const SIGNOZ_ENDPOINT = config.signozEndpoint;
 export const resource = resourceFromAttributes({
   [ATTR_SERVICE_NAME]: constants.OTLP_SERVICE_NAME,
   [ATTR_SERVICE_VERSION]: constants.OTLP_SERVICE_VERSION,
-})
+});
 
 const metricReader = new PeriodicExportingMetricReader({
   exporter: new OTLPMetricExporter({
     url: `${SIGNOZ_ENDPOINT}/v1/metrics`,
   }),
-})
+});
 
 export const sdk = new NodeSDK({
   // Register the service name and version
@@ -36,4 +36,4 @@ export const sdk = new NodeSDK({
 });
 
 export const fastifyOtelInstrumentation = new FastifyOtelInstrumentation.default({ servername: constants.OTLP_SERVICE_NAME });
-fastifyOtelInstrumentation.setTracerProvider(opentelemetry.trace.getTracerProvider())
+fastifyOtelInstrumentation.setTracerProvider(opentelemetry.trace.getTracerProvider());

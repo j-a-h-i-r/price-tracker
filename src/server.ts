@@ -13,7 +13,7 @@ export async function setupServer() {
     );
 
     // Register OpenTelemetry instrumentation for Fastify
-    server.register(fastifyOtelInstrumentation.plugin())
+    server.register(fastifyOtelInstrumentation.plugin());
     
 
     server.register(routes, { prefix: '/api' });
@@ -28,7 +28,7 @@ export async function setupServer() {
         await server.listen({
             port: PORT,
             host: address
-        })
+        });
     } catch (err) {
         logger.error(err, 'Server failed to start');
 
