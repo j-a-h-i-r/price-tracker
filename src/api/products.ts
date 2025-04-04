@@ -1,6 +1,12 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { knex } from '../core/db.js';
 
+interface ProductListQuery {
+    page?: number;
+    limit?: number;
+    name?: string;
+}
+
 interface PriceParams {
     id: string;
 }
@@ -11,22 +17,22 @@ interface PriceQuery {
     limit?: number;
 }
 
-interface CreatePriceBody {
-    price: number;
-    is_available: boolean;
-    external_product_id: number;
-}
-
-export default async function routes(fastify: FastifyInstance, options: any) {
-    fastify.get('/', async (req, res) => {
-        return knex
+export default async function routes(fastify: FastifyInstance) {
+    fastify.get('/', async (req: FastifyRequest<{Querystring: ProductListQuery}>) => {
+        const { name } = req.query;
+        const products = knex
             .select('*')
-            .from('external_products');
+            .from('internal_products');
+        if (name) {
+            products.where('name', 'ILIKE', `%${name}%`);
+        }
+
+        return products;
     });
 
     fastify.get<{ Params: { id: string } }>('/:id', async (req, res) => {
         const id = req.params.id;
-        const product = await knex('external_products')
+        const product = await knex('internal_products')
             .where('id', id)
             .first();
         if (!product) {
@@ -53,31 +59,45 @@ export default async function routes(fastify: FastifyInstance, options: any) {
     //         .orderBy('similarity', 'desc');
     // });
 
-    // // Get all prices for a product with optional date range and limit
-    // fastify.get<{ Params: PriceParams; Querystring: PriceQuery }>(
-    //     '/:id/prices',
-    //     async (req, reply) => {
-    //         const { id } = req.params;
-    //         const { from, to, limit = 100 } = req.query;
+    // Get all prices for a product with optional date range and limit
+    fastify.get<{ Params: PriceParams; Querystring: PriceQuery }>(
+        '/:id/prices',
+        async (req, reply) => {
+            const { id } = req.params;
 
-    //         let query = knex
-    //             .select('p.id', 'p.price', 'p.is_available', 'p.created_at')
-    //             .from('prices as p')
-    //             .innerJoin('external_products as ep', 'ep.id', 'p.external_product_id')
-    //             .where('ep.internal_product_id', id)
-    //             .orderBy('p.created_at', 'desc')
-    //             .limit(limit);
-
-    //         if (from) {
-    //             query = query.where('p.created_at', '>=', from);
-    //         }
-    //         if (to) {
-    //             query = query.where('p.created_at', '<=', to);
-    //         }
-
-    //         return query;
-    //     }
-    // );
+            const { rows } = await knex.raw(`
+                SELECT 
+                    ip.name,
+                    ip.category_id,
+                    ip.metadata,
+                    ip.id,
+                    JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                            'website_id', ep.website_id,
+                            'price', p.price,
+                            'url', ep.url,
+                            'website', w.name
+                        )
+                    ) AS prices
+                FROM internal_products ip 
+                INNER JOIN external_products ep 
+                    ON ip.id = ep.internal_product_id
+                INNER JOIN prices p 
+                    ON p.external_product_id = ep.id
+                INNER JOIN websites w
+                    ON w.id = ep.website_id
+                WHERE ip.id = ?
+                GROUP BY ip.id
+            `, [id])
+            
+            if (rows.length === 0) {
+                reply.code(404).send({ error: 'Product not found' });
+                return;
+            }
+            const product = rows[0];
+            return product;
+        }
+    );
 
     // // Get a specific price record
     // fastify.get<{ Params: { id: string; priceId: string } }>(

@@ -22,7 +22,7 @@ function start() {
         setupEverything()
             .then(async ({otlpSdk}) => {
                 otlpSdk.start();
-                await startScraping();
+                // await startScraping();
                 logger.info('Scraper triggered once');
             })
             .catch((error) => {
