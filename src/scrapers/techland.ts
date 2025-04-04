@@ -6,11 +6,11 @@ import logger from '../core/logger.js';
 
 export class Techland extends BaseScraper {
     readonly categories: CategoryLink[] = [
-        {  category: 'Laptop', url: 'https://www.techlandbd.com/brand-laptops' },
-        {  category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' }, 
-        {  category: 'Phone', url: 'https://www.techlandbd.com/smartphone-and-tablet/smartphone' },
-        {  category: 'Monitor', url: 'https://www.techlandbd.com/monitor-and-display/computer-monitor' },
-        {  category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
+        // {  category: 'Laptop', url: 'https://www.techlandbd.com/brand-laptops' },
+        // {  category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' }, 
+        // {  category: 'Phone', url: 'https://www.techlandbd.com/smartphone-and-tablet/smartphone' },
+        // {  category: 'Monitor', url: 'https://www.techlandbd.com/monitor-and-display/computer-monitor' },
+        // {  category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
     ];
 
     private async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
