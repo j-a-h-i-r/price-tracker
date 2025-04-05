@@ -48,7 +48,7 @@ export abstract class BaseScraper implements Scraper {
                             producer.emit(category, products);
                             return products;
                         } catch (error) {
-                            logger.error(error, `Failed to scrape category ${category}`);
+                            logger.error(error, `Failed to scrape category ${category} with url: ${url}`);
                             producer.emitError(error as Error);
                             return [];
                         }

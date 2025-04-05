@@ -5,14 +5,14 @@ import logger from '../core/logger.js';
 
 export class StarTech extends BaseScraper {
     readonly categories: CategoryLink[] = [
-        // {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
-        // {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
-        // {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
+        {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
+        {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
+        {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
         {  category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
-        // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
-        // {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
-        // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
-        // {  category: 'Keyboard', url: 'https://www.startech.com.bd/accessories/keyboards', },
+        {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
+        {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
+        {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
+        {  category: 'Keyboard', url: 'https://www.startech.com.bd/accessories/keyboards', },
     ];
 
     private async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
@@ -53,7 +53,7 @@ export class StarTech extends BaseScraper {
                 if (result.status === 'fulfilled') {
                     return result.value;
                 } else {
-                    logger.error(result.reason, 'Failed to parse product page');
+                    logger.error(result.reason, `Failed to parse product page. URL: ${result.reason?.config?.url}`);
                     return null;
                 }
             }).filter((product): product is ScrapedProduct => product !== null);
