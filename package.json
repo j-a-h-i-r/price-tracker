@@ -17,7 +17,7 @@
     "start": "node dist/src/index.js",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "start:dev": "cross-env NODE_ENV=development nodemon src/index.ts",
+    "dev": "cross-env NODE_ENV=development nodemon src/index.ts",
     "start:debug": "tsnd --inspect --respawn --transpile-only src/index.ts",
     "clean": "rimraf dist/",
     "compile": "tsc",
