@@ -71,23 +71,32 @@ export default async function routes(fastify: FastifyInstance) {
                     ip.category_id,
                     ip.metadata,
                     ip.id,
-                    JSON_AGG(
-                        JSON_BUILD_OBJECT(
-                            'website_id', ep.website_id,
-                            'price', p.price,
-                            'url', ep.url,
-                            'website', w.name
+                    (
+                        SELECT
+                        JSON_AGG(
+                            JSON_BUILD_OBJECT(
+                                'website_id', ep.website_id,
+                                'price', p.price,
+                                'url', ep.url,
+                                'website', w.name,
+                                'created_at', p.created_at,
+                                'is_available', p.is_available
+                            )
+                            ORDER BY p.created_at desc
                         )
-                    ) AS prices
-                FROM internal_products ip 
-                INNER JOIN external_products ep 
-                    ON ip.id = ep.internal_product_id
-                INNER JOIN prices p 
-                    ON p.external_product_id = ep.id
-                INNER JOIN websites w
-                    ON w.id = ep.website_id
-                WHERE ip.id = ?
-                GROUP BY ip.id
+                        FROM
+                            prices p
+                        INNER JOIN external_products ep 
+                            ON ip.id = ep.internal_product_id
+                        INNER JOIN websites w
+                            ON w.id = ep.website_id
+                        WHERE
+                            p.external_product_id = ep.id
+                        ) as prices
+                FROM
+	                internal_products ip
+                WHERE
+                    ip.id = ?;
             `, [id])
             
             if (rows.length === 0) {

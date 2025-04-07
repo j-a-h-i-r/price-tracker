@@ -146,7 +146,7 @@ export class QueueProcessor {
             // Find something like a deque to get the batch efficiently
             const products = this.jobs.slice(0, this.BATCH_SIZE);
             this.jobs = this.jobs.slice(this.BATCH_SIZE);
-            logger.info({batch: products}, 'Batch being processed');
+            logger.info(products, 'Batch being processed');
             
             // Save the manufacturers in DB
             const manufacturersMap = await this.processAndPersistExternalManufacturers(products);
