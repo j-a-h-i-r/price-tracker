@@ -1,9 +1,9 @@
-import axios from 'axios';
+import { request } from 'undici'
 
 async function fetchListingPageHtml(pageNumber: number): Promise<string> {
     const pageUrl = `https://www.startech.com.bd/component/graphics-card?page=${pageNumber}`;
-    const req = await axios.get(pageUrl);
-    return req.data as string;
+    const req = await request(pageUrl);
+    return req.body.text();
 }
 
 async function fetchAllListingHtml(numPages: number) {

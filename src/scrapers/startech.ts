@@ -17,8 +17,8 @@ export class StarTech extends BaseScraper {
 
     private async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
         const pageUrl = `${url}?page=${pageNumber}`;
-        const req = await this.axiosGet(pageUrl);
-        return req.data as string;
+        const req = await this.fetchWithThrottle(pageUrl);
+        return req.body.text();
     }
 
     private parsePageCount(html: string): number {
@@ -68,8 +68,9 @@ export class StarTech extends BaseScraper {
     async parseProductPage(pageUrl: string): Promise<ScrapedProduct> {
         logger.debug(`Scraping ${pageUrl}`);
 
-        const req = await this.axiosGet(pageUrl);
-        const $ = cheerio.load(req.data);
+        const req = await this.fetchWithThrottle(pageUrl);
+        const html = await req.body.text();
+        const $ = cheerio.load(html);
         
         return {
             name: $('div.product-short-info > h1[class=\'product-name\']').text().trim(),

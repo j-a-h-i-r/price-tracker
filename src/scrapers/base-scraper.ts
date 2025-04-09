@@ -3,7 +3,7 @@ import { ScrapeConsumer, ScrapeProducer } from './scrape-events.js';
 import logger from '../core/logger.js';
 import { CategoryName } from '../constants.js';
 import pThrottle from 'p-throttle';
-import axios from 'axios';
+import { request } from 'undici';
 
 export interface CategoryLink {
     category: CategoryName;
@@ -19,17 +19,19 @@ export abstract class BaseScraper implements Scraper {
     });
 
     /**
-     * A throttled function to make GET requests using axios
+     * A throttled function to make GET requests
      * @param url The URL to fetch
      * @returns 
      */
-    protected axiosGet(url: string) {
-        return this.throttle((url) => {
-            return axios.get(url, {
+    protected fetchWithThrottle(url: string) {
+        return this.throttle((_url) => {
+            return request(_url, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:136.0) Gecko/20100101 Firefox/136.0'
-                },
-            });
+                }
+            }).then((response) => {
+                return response;
+            })
         })(url);
     } 
 
