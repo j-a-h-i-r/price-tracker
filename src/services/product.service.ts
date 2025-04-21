@@ -186,6 +186,53 @@ export class ProductService {
         });
     }
 
+    async saveNormalizedMetadata() {
+        const externalProducts = await this.getExternalProducts();
+        const normazlizedProducts = externalProducts.map((product) => ({
+            internal_product_id: product.internal_product_id,
+            metadata: this.normalizeMetadata(product.metadata),
+        }));
+
+        console.log('Normalized products', normazlizedProducts);
+
+        await knex.transaction(async (trx) => {
+            await trx.raw(`
+                CREATE TEMPORARY TABLE temp_product_normalized_metadata (
+                    internal_product_id INTEGER,
+                    metadata JSONB
+                );
+            `);
+
+            await trx('temp_product_normalized_metadata').insert(normazlizedProducts);
+            await trx.raw(`
+                UPDATE internal_products ip
+                SET metadata = COALESCE(temp.metadata, ip.metadata)
+                FROM temp_product_normalized_metadata temp
+                WHERE
+                    ip.id = temp.internal_product_id
+                    and temp.metadata IS NOT NULL;
+            `);
+            await trx.raw(`
+                DROP TABLE temp_product_normalized_metadata;
+            `);
+        });
+    }
+
+    normalizeMetadata(metadata: Record<string, string>): Record<string, string> {
+        const { RAM, ...rest } = metadata;
+        const ramMatches = RAM ? RAM.match(/(\d+)\s*(GB|MB)/ig) : null
+        const ram = ramMatches ? ramMatches[0] : null;
+        const normalizedMetadata = {
+            ...rest,
+        };
+        if (ram) {
+            normalizedMetadata.RAM = ram;
+        } else {
+            normalizedMetadata.RAM = RAM;
+        }
+        return normalizedMetadata;
+    }
+
     async getCategories() {
         return knex('categories')
             .select('*')

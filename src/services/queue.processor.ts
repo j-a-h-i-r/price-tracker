@@ -3,6 +3,13 @@ import { ProductService } from './product.service.js';
 import logger from '../core/logger.js';
 import { queueEvent, parseEvent } from '../events.js';
 
+/**
+ * TODO: Make a dedicate queue class that works on a batch
+ * The queue class should do the following:
+ * 1/ Add jobs to the queue
+ * 2/ Register processors for the queue
+ * 3/ If the batch is full or the max wait time is reached, send batches to the processor
+ */
 export class QueueProcessor {
     private jobs: ProductJob[] = [];
     private lastProcessedTime: number;
@@ -48,6 +55,16 @@ export class QueueProcessor {
             await this.productService.syncProducts();
         } catch (error) {
             logger.error(error, 'Failed to sync external products');
+        }
+
+        // Sync metadata. here's the following to keep in mind:
+        // 1. If a metadata is parsed from external websites, it should be updated 
+        // in the internal products table
+        // 2. If we have manually overriden a metadata, it should not be updated
+        try {
+            await this.productService.saveNormalizedMetadata();
+        } catch (error) {
+            logger.error(error, 'Failed to save normalized metadata');
         }
     }
 
