@@ -35,7 +35,7 @@ export abstract class BaseScraper implements Scraper {
         })(url);
     } 
 
-    abstract scrapeCategory(category: string): Promise<ScrapedProduct[]>;
+    abstract scrapeCategory(category: CategoryLink): Promise<ScrapedProduct[]>;
 
     scrape(): ScrapeConsumer {
         const producer = new ScrapeProducer();
@@ -46,7 +46,7 @@ export abstract class BaseScraper implements Scraper {
                 const results = await Promise.all(
                     this.categories.map(async ({category, url}) => {
                         try {
-                            const products = await this.scrapeCategory(url);
+                            const products = await this.scrapeCategory({category, url});
                             producer.emit(category, products);
                             return products;
                         } catch (error) {
