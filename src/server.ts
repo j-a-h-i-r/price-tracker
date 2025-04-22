@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import qs from 'qs';
 import routes from './api/index.js';
 import logger from './core/logger.js';
 import config from './core/config.js';
@@ -9,6 +10,7 @@ export async function setupServer() {
     const server = Fastify.default(
         {
             loggerInstance: logger,
+            querystringParser: (str) => qs.parse(str),
         }
     );
 

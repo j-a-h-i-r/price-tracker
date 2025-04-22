@@ -6,7 +6,7 @@ export interface ScrapedProduct {
     price: number | null
     slug: string
     manufacturer: string
-    metadata: Record<string, string>
+    raw_metadata: Record<string, string>
     isAvailable: boolean
     url: string
 }

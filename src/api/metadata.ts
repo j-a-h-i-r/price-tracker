@@ -8,11 +8,11 @@ type MetadataQuery = {
 export default async function routes(fastify: FastifyInstance, options: any) {
     fastify.get('/', async (req: FastifyRequest<{Querystring: MetadataQuery}>, res) => {
         // Return all metadata
-        let { category_id, website_id } = req.query;
-        let metadataSet = new Set();
+        const { category_id, website_id } = req.query;
+        const metadataSet = new Set();
         const metadataQuery = knex
-            .select('metadata')
-            .from('external_products')
+            .select('raw_metadata')
+            .from('external_products');
         if (category_id) {
             metadataQuery.where('category_id', category_id);
         }
@@ -21,8 +21,8 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         }
         const metadatas = await metadataQuery;
         metadatas.forEach((item) => {
-            const {metadata} = item;
-            Object.keys(metadata).forEach((key) => {
+            const { raw_metadata } = item;
+            Object.keys(raw_metadata).forEach((key) => {
                 metadataSet.add(key);
             });
         });
@@ -32,11 +32,11 @@ export default async function routes(fastify: FastifyInstance, options: any) {
 
     fastify.get('/:metadata', async (req: FastifyRequest<{ Params: { metadata: string }, Querystring: MetadataQuery }>, res) => {
         const metadataKey = req.params.metadata;
-        let { category_id, website_id } = req.query;
-        let metadataQuery = knex
+        const { category_id, website_id } = req.query;
+        const metadataQuery = knex
             .select('*')
             .from('external_products')
-            .whereRaw(`metadata ->> ? IS NOT NULL`, [metadataKey]);
+            .whereRaw('raw_metadata ->> ? IS NOT NULL', [metadataKey]);
 
         if (category_id) {
             metadataQuery.andWhere('category_id', category_id);
