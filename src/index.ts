@@ -43,16 +43,16 @@ export function startScraping() {
         scrapers.forEach(({ website, scraper }) => {
             const scrapingEvent = scraper.scrape();
 
-            scrapingEvent.onProducts(async (category, products) => {
-                logger.info(`Got ${products.length} products for ${category} for ${website.name} from the scraper`);
-                products.forEach(product => {
-                    queueEvent.notify({
-                        ...product,
-                        category_id: categoriesMap[category],
-                        website_id: website.website_id,
-                    });
-                });
-            });
+            // scrapingEvent.onProducts(async (category, products) => {
+            //     logger.info(`Got ${products.length} products for ${category} for ${website.name} from the scraper`);
+            //     products.forEach(product => {
+            //         queueEvent.notify({
+            //             ...product,
+            //             category_id: categoriesMap[category],
+            //             website_id: website.website_id,
+            //         });
+            //     });
+            // });
 
             scrapingEvent.onComplete((allProducts: ScrapedProduct[]) => {
                 scrapedProducts += allProducts.length;

@@ -2,6 +2,8 @@ import * as cheerio from 'cheerio';
 import { BaseScraper, CategoryLink } from './base-scraper.js';
 import { ScrapedProduct, Website } from './scraper.types.js';
 import logger from '../core/logger.js';
+import { queueEvent } from '../events.js';
+import { categoriesMap, CategoryName } from '../constants.js';
 
 export class StarTech extends BaseScraper {
     readonly categories: CategoryLink[] = [
@@ -39,14 +41,15 @@ export class StarTech extends BaseScraper {
         return pageLinks;
     }
 
-    async scrapeCategory(category: string): Promise<ScrapedProduct[]> {
-        logger.info(`Scraping ${category}`);
-        const firstPageHtml = await this.fetchListingPageHtml(category, 1);
+    async scrapeCategory(category: CategoryLink): Promise<ScrapedProduct[]> {
+        const { category: categoryName, url: categoryUrl } = category;
+        logger.info(`Scraping ${categoryName} category from ${categoryUrl}`);
+        const firstPageHtml = await this.fetchListingPageHtml(categoryUrl, 1);
         const pageCount = this.parsePageCount(firstPageHtml);
         const products: ScrapedProduct[] = [];
 
         for (let i = 1; i <= pageCount; i++) {
-            const html = await this.fetchListingPageHtml(category, i);
+            const html = await this.fetchListingPageHtml(categoryUrl, i);
             const pageLinks = this.parsePageLinks(html);
             const pageProducts = await Promise.allSettled(pageLinks.map(link => this.parseProductPage(link)));
             const parsedProducts = pageProducts.map((result) => {
@@ -58,7 +61,16 @@ export class StarTech extends BaseScraper {
                 }
             }).filter((product): product is ScrapedProduct => product !== null);
             logger.debug(`Found ${parsedProducts.length} products on page ${i}`);
-            products.push(...parsedProducts);
+            // products.push(...parsedProducts);
+            parsedProducts.forEach((product) => {
+                const event = {
+                    ...product,
+                    category_id: categoriesMap[categoryName],
+                    website_id: StartTechWebsite.website_id,
+                }
+                console.log("Event", event);
+                queueEvent.notify(event);
+            })
         }
 
         logger.info(`Scraped ${products.length} products from ${category}`);
@@ -86,7 +98,7 @@ export class StarTech extends BaseScraper {
     private parsePrice($: cheerio.Root): number {
         const priceTxt = $('td.product-info-data.product-price').text().trim();
         const curPriceTxt = priceTxt.match(/^[^\d]?[\d,.]+/gm)?.[0] ?? '';
-        return Number(curPriceTxt.replace(/[^\d]/gm, '')) ?? 0;
+        return Number(curPriceTxt.replace(/[^\d]/gm, '')) ?? null;
     }
 
     private parseAvailability($: cheerio.Root): boolean {
