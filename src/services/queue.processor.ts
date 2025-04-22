@@ -88,9 +88,9 @@ export class QueueProcessor {
     // TODO: Implement this method
     private processMetadata(product: ExternalProduct): Record<string, string> {
         if (product.category_id === 3) {
-            return this.processTabletMetadata(product.metadata);
+            return this.processTabletMetadata(product.raw_metadata);
         } else {
-            return product.metadata;
+            return product.raw_metadata;
         }
     }
 

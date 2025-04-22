@@ -1,4 +1,4 @@
-import { request } from 'undici'
+import { request } from 'undici';
 
 async function fetchListingPageHtml(pageNumber: number): Promise<string> {
     const pageUrl = `https://www.startech.com.bd/component/graphics-card?page=${pageNumber}`;
