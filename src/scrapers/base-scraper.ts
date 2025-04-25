@@ -1,16 +1,19 @@
-import { ScrapedProduct, Scraper } from './scraper.types.js';
-import { ScrapeConsumer, ScrapeProducer } from './scrape-events.js';
-import logger from '../core/logger.js';
 import { CategoryName } from '../constants.js';
 import pThrottle from 'p-throttle';
 import { request } from 'undici';
+import { ProductJob } from '../types/product.types.js';
 
 export interface CategoryLink {
     category: CategoryName;
     url: string;
 }
 
-export abstract class BaseScraper implements Scraper {
+export interface ProductLink {
+    url: string;
+    category: CategoryLink;
+}
+
+export abstract class BaseScraper {
     protected abstract readonly categories: CategoryLink[];
 
     protected readonly throttle = pThrottle({
@@ -33,40 +36,10 @@ export abstract class BaseScraper implements Scraper {
                 return response;
             });
         })(url);
-    } 
-
-    abstract scrapeCategory(category: CategoryLink): Promise<ScrapedProduct[]>;
-
-    scrape(): ScrapeConsumer {
-        const producer = new ScrapeProducer();
-        const consumer = new ScrapeConsumer(producer.getEmitter());
-        
-        (async () => {
-            try {
-                const results = await Promise.all(
-                    this.categories.map(async ({category, url}) => {
-                        try {
-                            const products = await this.scrapeCategory({category, url});
-                            producer.emit(category, products);
-                            return products;
-                        } catch (error) {
-                            logger.error(error, `Failed to scrape category ${category} with url: ${url}`);
-                            producer.emitError(error as Error);
-                            return [];
-                        }
-                    })
-                );
-                
-                const allProducts = results.flat();
-                producer.emitComplete(allProducts);
-                producer.removeListeners();
-            } catch (error) {
-                logger.error(error, 'Failed to scrape');
-                producer.emitError(error as Error);
-                producer.removeListeners();
-            }
-        })();
-    
-        return consumer;
     }
+
+    /**
+     * Return a scraped product
+     */
+    abstract scrapeProducts(): AsyncGenerator<ProductJob>;
 }

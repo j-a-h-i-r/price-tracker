@@ -1,5 +1,4 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { knex } from '../core/db.js';
 import { ProductService } from '../services/product.service.js';
 import { z } from 'zod';
 
@@ -11,16 +10,16 @@ interface PriceQuery {
 
 const IdParam = z.object({
     id: z.string().transform(Number),
-})
+});
 type IdParam = z.infer<typeof IdParam>;
 
-const StringFilter = z.string()
+const StringFilter = z.string();
 type StringFilter = z.infer<typeof StringFilter>;
 const NumericFilter = z.union([
     z.string().transform(Number),
-    z.record(z.enum(["eq", "gt", "lt"]), z.string().transform(Number))
+    z.record(z.enum(['eq', 'gt', 'lt']), z.string().transform(Number))
 ]);
-const BooleanFilter = z.boolean()
+const BooleanFilter = z.boolean();
 
 const ProductQuerySchema = z.object({
     name: StringFilter.optional(),
@@ -91,9 +90,9 @@ export default async function routes(fastify: FastifyInstance) {
         }
     );
 
-    // fastify.get('/syncmetadata', async (req, reply) => {
-    //     return new ProductService().saveNormalizedMetadata()
-    // })
+    fastify.get('/syncmetadata', async (req, reply) => {
+        return new ProductService().saveNormalizedMetadata();
+    });
 
     // // Get a specific price record
     // fastify.get<{ Params: { id: string; priceId: string } }>(

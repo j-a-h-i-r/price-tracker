@@ -31,19 +31,19 @@ export async function up(knex: Knex): Promise<void> {
             .orderBy('external_product_id')
             .orderBy('created_at', 'desc')
             .distinctOn('external_product_id')
-        )
+        );
     })
     .createViewOrReplace('internal_products_latest_price', (view) => {  
         view.as(knex
             .select('ip.*', 
-                knex.raw("json_agg(jsonb_build_object('website_id', ep.website_id, 'price', eplp.price, 'created_at', eplp.created_at))::jsonb as prices")
+                knex.raw('json_agg(jsonb_build_object(\'website_id\', ep.website_id, \'price\', eplp.price, \'created_at\', eplp.created_at))::jsonb as prices')
             )
             .from('internal_products as ip')
             .innerJoin('external_products as ep', 'ip.id', 'ep.internal_product_id')
             .innerJoin('external_products_latest_price as eplp', 'ep.id', 'eplp.external_product_id')
             .groupBy('ip.id')
-        )
-    })
+        );
+    });
 }
 
 

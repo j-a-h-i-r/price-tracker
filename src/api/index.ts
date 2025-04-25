@@ -7,6 +7,7 @@ import priceRoutes from './prices.js';
 import categoryRoutes from './category.js';
 import metadataRoutes from './metadata.js';
 import dealRoutes from './deals.js';
+import filterRoutes from './filters.js';
 import config from '../core/config.js';
 import { AUTH_ERRORS } from '../core/constants.js';
 import { ZodError } from 'zod';
@@ -38,7 +39,7 @@ export default async function routes(fastify: FastifyInstance, options: any) {
             return reply.status(400).send({ error: `Found following errors: ${errorMessage}` });
         }
         return error;
-    })
+    });
 
     fastify.register(categoryRoutes, { prefix: '/categories' });
     fastify.register(websiteRoutes, { prefix: '/websites' });
@@ -46,4 +47,5 @@ export default async function routes(fastify: FastifyInstance, options: any) {
     fastify.register(priceRoutes, { prefix: '/prices' });
     fastify.register(metadataRoutes, { prefix: '/metadatas' });
     fastify.register(dealRoutes, { prefix: '/deals' });
+    fastify.register(filterRoutes, { prefix: '/filters' });
 }

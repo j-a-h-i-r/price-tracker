@@ -44,3 +44,7 @@ export const categoriesMap: Record<CategoryName, number> = categories.reduce((ac
     acc[category.name] = category.id;
     return acc;
 }, {} as Record<CategoryName, number>);
+
+export function getCategoryId(category: CategoryName): number {
+    return categoriesMap[category];
+}

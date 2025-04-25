@@ -1,16 +1,19 @@
+import { knex } from '../core/db.js';
+
 export type ParsedMetadata = Partial<{
     ram: string;
     weight: string;
     sim_esim: boolean;
     usb_type_c: boolean;
     usb_thunderbolt: boolean;
-    usb_version: "2" | "3";
+    usb_version: '2' | '3';
 }>
 
 export type MetadataKey = keyof ParsedMetadata;
 export type MetadataProperty = {
     displayName: string;
     dataType?: 'string' | 'number' | 'boolean';
+    unit?: string;
 }
 
 interface ParserOutputSuccess {
@@ -41,9 +44,13 @@ export interface MetadataParser {
 export const MetadataDefinitions: Record<MetadataKey, MetadataProperty> ={
     ram: {
         displayName: 'RAM',
+        dataType: 'number',
+        unit: 'GB',
     },
     weight: {
         displayName: 'Weight',
+        dataType: 'number',
+        unit: 'gm',
     },
     sim_esim: {
         displayName: 'eSIM Support',
@@ -70,14 +77,19 @@ const RAMParser: MetadataParser = {
         if (!RAM) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
         }
-        const ramMatches = RAM ? RAM.match(/(\d+)\s*(GB|MB)/ig) : null;
-        if (!ramMatches) {
+        const groups = /(?<ram_amount>\d+)\s*(?<ram_unit>GB|MB)/i.exec(RAM)?.groups;
+        if (!groups) {
             return { hasMetadata: true, parseSuccess: false, parsedMetadata: RAM };
+        }
+        const { ram_amount, ram_unit } = groups;
+        let ramAmountNumeric = Number(ram_amount);
+        if (ram_unit.toLowerCase() === 'mb') {
+            ramAmountNumeric = ramAmountNumeric / 1024;
         }
         return {
             hasMetadata: true,
             parseSuccess: true,
-            parsedMetadata: { [this.metadataKey]: ramMatches[0].replace(" ", "") }
+            parsedMetadata: { [this.metadataKey]: ramAmountNumeric }
         };
     }
 };
@@ -89,14 +101,19 @@ const WeightParser: MetadataParser = {
         if (!weight) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
         }
-        const weightMatches = weight.match(/(\d+)\s*(kg|g)/i);
-        if (!weightMatches) {
+        const groups = /\b(?<weight_amount>\d+)\s*(?<unit>kg|g)\b/i.exec(weight)?.groups;
+        if (!groups) {
             return { hasMetadata: true, parseSuccess: false, parsedMetadata: weight };
+        }
+        const { weight_amount, unit } = groups;
+        let weightAmountNumeric = Number(weight_amount);
+        if (unit.toLowerCase() === 'kg') {
+            weightAmountNumeric = weightAmountNumeric * 1000;
         }
         return {
             hasMetadata: true,
             parseSuccess: true,
-            parsedMetadata: { [this.metadataKey]: weightMatches[0].replace(" ", "") }
+            parsedMetadata: { [this.metadataKey]: weightAmountNumeric }
         };
     }
 };
@@ -121,7 +138,7 @@ const SIMParser: MetadataParser = {
 const USBParser: MetadataParser = {
     metadataKey: 'sim_esim',
     parse(metadata: Record<string, string>): ParserOutput {
-        let { USB: usb, "USB Type-C / Thunderbolt Port": usb_port } = metadata;
+        let { USB: usb, 'USB Type-C / Thunderbolt Port': usb_port } = metadata;
         if (!usb && !usb_port) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
         }
@@ -130,7 +147,7 @@ const USBParser: MetadataParser = {
             usb = usb_port;
         }
 
-        let parsedUsb: ParsedMetadata = {
+        const parsedUsb: ParsedMetadata = {
             usb_type_c: false,
             usb_thunderbolt: false,
         };
@@ -159,3 +176,57 @@ export const metadataParsers: MetadataParser[] = [
     SIMParser,
     USBParser,
 ];
+
+function fetchMinMaxValues(metadata: MetadataKey)  {
+    return knex('internal_products')
+        .select(
+            knex.raw('MIN((parsed_metadata ->> ?)::float) as min', [metadata]),
+            knex.raw('MAX((parsed_metadata ->> ?)::float) as max', [metadata]),
+        ).first();
+}
+
+function fetchUniqueStrings(metadata: MetadataKey) {
+    return knex('internal_products')
+        .select(
+            knex.raw('DISTINCT(parsed_metadata ->> ?) as value', [metadata]),
+        )
+        .whereRaw('parsed_metadata ->> ? IS NOT NULL', [metadata]);
+}
+
+export async function metadataFilters() {
+    const filters = await Promise.all(Object.keys(MetadataDefinitions).map(async (key) => {
+        const metadataKey = key as MetadataKey;
+        const metadataProperty = MetadataDefinitions[metadataKey];
+        if (metadataProperty.dataType === 'number') {
+            const { min, max } = await fetchMinMaxValues(metadataKey);
+            return {
+                key: metadataKey,
+                displayName: metadataProperty.displayName,
+                unit: metadataProperty.unit,
+                type: 'range',
+                range: {
+                    min: min,
+                    max: max,
+                }
+            };
+            // Add a filter for number type
+        } else if (metadataProperty.dataType === 'boolean') {
+            return {
+                key: metadataKey,
+                displayName: metadataProperty.displayName,
+                unit: metadataProperty.unit,
+                type: 'boolean',
+            };
+        } else if (metadataProperty.dataType === 'string') {
+            const uniqueValues = await fetchUniqueStrings(metadataKey);
+            return {
+                key: metadataKey,
+                displayName: metadataProperty.displayName,
+                unit: metadataProperty.unit,
+                type: 'string',
+                values: uniqueValues.map((row) => row.value),
+            };
+        }
+    }));
+    return filters;
+}

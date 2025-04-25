@@ -13,4 +13,3 @@ export const scrapers = [
 ];
 
 export * from './scraper.types.js';
-export * from './scrape-events.js';

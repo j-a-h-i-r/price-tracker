@@ -1,8 +1,10 @@
 
 import * as cheerio from 'cheerio';
-import { BaseScraper, CategoryLink } from './base-scraper.js';
+import { BaseScraper, CategoryLink, ProductLink } from './base-scraper.js';
 import { ScrapedProduct, Website } from './scraper.types.js';
 import logger from '../core/logger.js';
+import { ProductJob } from '../types/product.types.js';
+import { getCategoryId } from '../constants.js';
 
 export class Techland extends BaseScraper {
     readonly categories: CategoryLink[] = [
@@ -10,8 +12,59 @@ export class Techland extends BaseScraper {
         // {  category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' }, 
         // {  category: 'Phone', url: 'https://www.techlandbd.com/smartphone-and-tablet/smartphone' },
         // {  category: 'Monitor', url: 'https://www.techlandbd.com/monitor-and-display/computer-monitor' },
-        // {  category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
+        {  category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
     ];
+
+    async fetchAllProductLinksForCategory(category: CategoryLink): Promise<string[]> {
+        const { url: categoryUrl } = category;
+        const firstPageHtml = await this.fetchListingPageHtml(categoryUrl, 1);
+        const pageCount = this.parsePageCount(firstPageHtml);
+        const productLinks: string[] = [];
+
+        for (let i = 1; i <= pageCount; i++) {
+            try {
+                // Don't fail if a page fails to load
+                const html = await this.fetchListingPageHtml(categoryUrl, i);
+                const pageLinks = this.parsePageLinks(html);
+                productLinks.push(...pageLinks);
+            } catch (error) {
+                logger.error(error, `Failed to fetch page ${i} for category ${category.category}`);
+            }
+        }
+        return productLinks;
+    }
+
+    async * scrapeProducts(): AsyncGenerator<ProductJob> {
+        const allProductLinks: ProductLink[] = [];
+        for (const category of this.categories) {
+            const { category: categoryName, url: categoryUrl } = category;
+            logger.info(`Scraping ${categoryName} category from ${categoryUrl}`);
+            const productLinks = await this.fetchAllProductLinksForCategory(category);
+            const categoryProductLinks = productLinks.map((link) => ({
+                url: link,
+                category: category,
+            }));
+            allProductLinks.push(...categoryProductLinks);
+        }
+
+        logger.info(`Found ${allProductLinks.length} products`);
+        for (const link of allProductLinks) {
+            const { url: productUrl, category } = link;
+            logger.debug(`Scraping ${productUrl}`);
+            try {
+                const product = await this.parseProductPage(productUrl);
+                const productJob = {
+                    ...product,
+                    category_id: getCategoryId(category.category),
+                    website_id: TechlandWebsite.website_id,
+                };
+                yield productJob;
+            } catch (error) {
+                logger.error(error, `Failed to parse product page. URL: ${productUrl}`);
+                continue;
+            }
+        }
+    }
 
     private async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
         const pageUrl = `${url}?page=${pageNumber}`;
@@ -62,7 +115,7 @@ export class Techland extends BaseScraper {
             const value = row.children().last().text().trim();
             specifications[key] = value;
         });
-        
+
         return {
             name: $('#product > table > caption > div > h1').text().trim(),
             price: price ? Number(price) : null,
@@ -72,33 +125,6 @@ export class Techland extends BaseScraper {
             manufacturer: brand,
             raw_metadata: specifications,
         };
-    }
-
-    async scrapeCategory(category: string): Promise<ScrapedProduct[]> {
-        logger.info(`Scraping ${category}`);
-        const firstPageHtml = await this.fetchListingPageHtml(category, 1);
-        const pageCount = this.parsePageCount(firstPageHtml);
-        const products: ScrapedProduct[] = [];
-
-        for (let i = 1; i <= pageCount; i++) {
-            const html = await this.fetchListingPageHtml(category, i);
-            const pageLinks = this.parsePageLinks(html);
-            logger.debug(`Found ${pageLinks.length} products on page ${i}`);
-            const pageProducts = await Promise.allSettled(pageLinks.map(link => this.parseProductPage(link)));
-            const parsedProducts = pageProducts.map(result => {
-                if (result.status === 'fulfilled') {
-                    return result.value;
-                } else {
-                    logger.error(result.reason, `Failed to parse product page. URL: ${result.reason?.config?.url}`);
-                    return null;
-                }
-            }).filter((product): product is ScrapedProduct => product !== null);
-            logger.debug(`Parsed ${parsedProducts.length} products from page ${i}`);
-            products.push(...parsedProducts);
-        }
-        logger.info(`Scraped ${products.length} products from ${category}`);
-        const productsWithCategory = products.map(product => ({ ...product, category }));
-        return productsWithCategory;
     }
 }
 
