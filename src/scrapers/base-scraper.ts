@@ -17,8 +17,8 @@ export abstract class BaseScraper {
     protected abstract readonly categories: CategoryLink[];
 
     protected readonly throttle = pThrottle({
-        limit: 10,     // 100 requests per second
-        interval: 10000, // 5 seconds delay between requests
+        limit: 100,     // 100 requests per second
+        interval: 5000, // 5 seconds delay between requests
     });
 
     /**

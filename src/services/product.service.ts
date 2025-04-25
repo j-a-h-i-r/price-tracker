@@ -3,9 +3,24 @@ import { ExternalManufacturer, ExternalProduct, InternalProduct, InternalProduct
 import { Category } from '../constants.js';
 import { metadataParsers } from './metadata.service.js';
 import { ProductQuery } from '../api/products.js';
+import logger from '../core/logger.js';
 
 export class ProductService {
     async getInternalProducts(filter: ProductQuery = {}): Promise<InternalProduct[]> {
+        // If the name is a URL, we'll first try to directly fetch the product
+        // by the URL
+        let internalProductId = null;
+        if (/^https?:\/\//.test(filter.name)) {
+            const product = await knex<ExternalProduct>('external_products')
+                .select('internal_product_id')
+                .where('url', filter.name)
+                .first();
+            if (product) {
+                logger.info(`Found product by URL: ${filter.name}`);
+                internalProductId = product.internal_product_id;
+            }
+        }
+
         let query = knex<InternalProduct>('internal_products_latest_price as iplp')
             .select(
                 'iplp.id',
@@ -18,6 +33,12 @@ export class ProductService {
                 'iplp.updated_at',
                 'iplp.prices',
             );
+        if (internalProductId) {
+            query = query.where('iplp.id', internalProductId);
+            return query;
+        }
+
+
         if (filter.name) {
             query = query.where('iplp.name', 'ILIKE', `%${filter.name}%`);
         }

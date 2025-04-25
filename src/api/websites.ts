@@ -22,4 +22,13 @@ export default async function routes(fastify: FastifyInstance, options: any) {
             .from('external_products')
             .where({website_id: websiteId});
     });
+
+    fastify.get('/:id/summary', async (req: FastifyRequest<{ Params: { id: string } }>, res) => {
+        const websiteId = req.params.id;
+        const summary = await knex('external_products')
+            .where({ website_id: websiteId })
+            .select(knex.raw('COUNT(DISTINCT url) as total_products, COUNT(DISTINCT category_id) as total_categories'))
+            .first();
+        return summary;
+    });
 }

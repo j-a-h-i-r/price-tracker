@@ -54,3 +54,7 @@ Install signoz on the host. They have a repo with docker compose set up.
 
 `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` = `http://172.21.0.3:4318/v1/logs`
 `SIGNOZ_ENDPOINT` = `http://172.21.0.3:4318`
+
+### Migrations
+
+If knex migration doesn't work then run it like this `NODE_OPTIONS='--loader ts-node/esm' knex migrate:latest;`
