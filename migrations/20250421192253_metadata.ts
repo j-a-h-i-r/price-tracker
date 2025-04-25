@@ -48,5 +48,8 @@ export async function up(knex: Knex): Promise<void> {
 
 
 export async function down(knex: Knex): Promise<void> {
+    knex.schema
+    .dropViewIfExists('external_products_latest_price')
+    .dropViewIfExists('internal_products_latest_price');
 }
 

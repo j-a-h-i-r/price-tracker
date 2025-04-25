@@ -25,7 +25,7 @@
     "build": "npm-run-all clean compile copy-files",
     "test": "jest",
     "test:watch": "jest --watch",
-    "migrate": "knex migrate:latest --esm",
+    "migrate": "cross-env NODE_OPTIONS='--loader ts-node/esm' knex migrate:latest --esm",
     "db:prod": "npm run migrate:prod && npm run seed:prod",
     "migrate:prod": "knex --cwd dist --env production migrate:latest",
     "seed:prod": "knex --cwd dist --env production seed:run"

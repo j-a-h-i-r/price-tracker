@@ -5,7 +5,7 @@ import config from './core/config.js';
 import { setupEverything } from './setup.js';
 import { createBatchedProductStream } from './scrapers/scrape-runner.js';
 import { pipeline } from 'stream';
-import { QueueProcessor } from './services/queue.processor.js';
+import { ScrapedProductsProcessor } from './services/product.processor.js';
 
 function start() {
     if (config.isProduction) {
@@ -22,7 +22,7 @@ function start() {
         setupEverything()
             .then(async ({otlpSdk}) => {
                 otlpSdk.start();
-                await startScraping();
+                // await startScraping();
                 logger.info('Scraper triggered once');
             })
             .catch((error) => {
@@ -39,7 +39,7 @@ export function startScraping() {
     return new Promise<void>((resolve, reject) => {
 
         const scrapedProductsStream = createBatchedProductStream();
-        pipeline(scrapedProductsStream, new QueueProcessor(), (err) => {
+        pipeline(scrapedProductsStream, new ScrapedProductsProcessor(), (err) => {
             if (err) {
                 logger.error(err, 'Error in pipeline');
                 reject(err);
@@ -48,35 +48,6 @@ export function startScraping() {
                 resolve();
             }
         });
-        
-        // scrapers.forEach(({ website, scraper }) => {
-        //     const scrapingEvent = scraper.scrape();
-
-        //     // scrapingEvent.onProducts(async (category, products) => {
-        //     //     logger.info(`Got ${products.length} products for ${category} for ${website.name} from the scraper`);
-        //     //     products.forEach(product => {
-        //     //         queueEvent.notify({
-        //     //             ...product,
-        //     //             category_id: categoriesMap[category],
-        //     //             website_id: website.website_id,
-        //     //         });
-        //     //     });
-        //     // });
-
-        //     scrapingEvent.onComplete((allProducts: ScrapedProduct[]) => {
-        //         scrapedProducts += allProducts.length;
-        //         completedScrapers++;
-        //         if (completedScrapers === scrapers.length) {
-        //             parseEvent.notify(scrapedProducts);
-        //             resolve();
-        //         }
-        //     });
-
-        //     scrapingEvent.onError((error) => {
-        //         logger.error(error, `Failed to scrape ${website.name}`);
-        //         reject(error);
-        //     });
-        // });
     });
 }
 

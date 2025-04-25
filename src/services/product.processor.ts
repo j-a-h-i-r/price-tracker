@@ -3,7 +3,7 @@ import { ProductService } from './product.service.js';
 import logger from '../core/logger.js';
 import { Writable } from 'stream';
 
-export class QueueProcessor extends Writable {
+export class ScrapedProductsProcessor extends Writable {
     private readonly productService: ProductService;
 
     constructor() {
@@ -18,13 +18,15 @@ export class QueueProcessor extends Writable {
      * @param callback 
      */
     _write(products: ProductJob[], encoding: BufferEncoding, callback?: (error: Error | null | undefined) => void) {
-        logger.info(products, `Received batch of ${products.length} products`);
+        logger.info(`Received batch of ${products.length} products`);
         this.processBatch(products)
         .then(() => {
             logger.info(`Successfully processed batch of ${products.length} products`);
-            callback?.(null);
         }).catch((error) => {
             logger.error(error, 'Failed to process batch');
+        }).finally(() => {
+            // Don't want to stop the streaming by throwing an error
+            // So we just log the error and call the callback with null
             callback?.(null);
         });
     }
@@ -37,7 +39,7 @@ export class QueueProcessor extends Writable {
      */
     _final(callback: (error?: Error | null) => void): void {
         logger.info('Finished processing all products');
-        this.processScrapedProducts().then(() => {
+        this.postProcessScrapedProducts().then(() => {
             logger.info('Finished processing all products');
         }).catch((error) => {
             logger.error(error, 'Failed to process all products');
@@ -46,8 +48,7 @@ export class QueueProcessor extends Writable {
         });
     }
 
-    // TODO: Run this method on a schedule
-    private async processScrapedProducts() {
+    private async postProcessScrapedProducts() {
         // Scraping session is done.
         // First let's normalize the manufacturers
         try {
@@ -64,10 +65,6 @@ export class QueueProcessor extends Writable {
             logger.error(error, 'Failed to sync external products');
         }
 
-        // Sync metadata. here's the following to keep in mind:
-        // 1. If a metadata is parsed from external websites, it should be updated 
-        // in the internal products table
-        // 2. If we have manually overriden a metadata, it should not be updated
         try {
             await this.productService.saveNormalizedMetadata();
         } catch (error) {
@@ -75,6 +72,10 @@ export class QueueProcessor extends Writable {
         }
     }
 
+    /**
+     * Process a batch of products
+     * @param products 
+     */
     private async processBatch(products: ProductJob[]): Promise<void> {
         logger.info(`Processing batch of ${products.length} jobs`);
         if (products.length === 0) {
@@ -82,8 +83,6 @@ export class QueueProcessor extends Writable {
             return;
         }
         try {
-            logger.info(products, 'Batch being processed');
-            
             // Save the manufacturers in DB
             const manufacturersMap = await this.processAndPersistExternalManufacturers(products);
             const productsWithManufacturerIds = products.map((product) => ({

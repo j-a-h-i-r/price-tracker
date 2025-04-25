@@ -19,6 +19,7 @@ const NumericFilter = z.union([
     z.string().transform(Number),
     z.record(z.enum(['eq', 'gt', 'lt']), z.string().transform(Number))
 ]);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const BooleanFilter = z.boolean();
 
 const ProductQuerySchema = z.object({
@@ -29,9 +30,7 @@ export type ProductQuery = z.infer<typeof ProductQuerySchema>;
 
 export default async function routes(fastify: FastifyInstance) {
     fastify.get('/', async (req: FastifyRequest<{Querystring: ProductQuery}>) => {
-        console.log('Query:', req.query);
         const parsedQuery = ProductQuerySchema.parse(req.query);
-        console.log('Parsed query:', parsedQuery);
         return new ProductService().getInternalProducts(parsedQuery);
     });
 

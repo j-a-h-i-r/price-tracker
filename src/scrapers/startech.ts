@@ -7,14 +7,14 @@ import { ProductJob } from '../types/product.types.js';
 
 export class StarTech extends BaseScraper {
     readonly categories: CategoryLink[] = [
-        // {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
-        // {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
-        // {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
+        {  category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
+        {  category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
+        {  category: 'Phone', url: 'https://www.startech.com.bd/mobile-phone', },
         { category: 'UPS', url: 'https://www.startech.com.bd/online-ups', },
-        // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
-        // {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
-        // {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
-        // {  category: 'Keyboard', url: 'https://www.startech.com.bd/accessories/keyboards', },
+        {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
+        {  category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
+        {  category: 'Camera', url: 'https://www.startech.com.bd/camera', },
+        {  category: 'Keyboard', url: 'https://www.startech.com.bd/accessories/keyboards', },
     ];
 
     async fetchAllProductLinksForCategory(category: CategoryLink): Promise<string[]> {
@@ -52,7 +52,6 @@ export class StarTech extends BaseScraper {
         logger.info(`Found ${allProductLinks.length} products`);
         for (const link of allProductLinks) {
             const { url: productUrl, category } = link;
-            logger.debug(`Scraping ${productUrl}`);
             try {
                 const product = await this.parseProductPage(productUrl);
                 const productJob = {
