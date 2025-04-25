@@ -1,41 +1,48 @@
 import { ExternalManufacturer, ProductJob } from '../types/product.types.js';
 import { ProductService } from './product.service.js';
 import logger from '../core/logger.js';
-import { queueEvent, parseEvent } from '../events.js';
-import { Queue } from './queue.js';
+import { Writable } from 'stream';
 
-/**
- * TODO: Make a dedicate queue class that works on a batch
- * The queue class should do the following:
- * 1/ Add jobs to the queue
- * 2/ Register processors for the queue
- * 3/ If the batch is full or the max wait time is reached, send batches to the processor
- */
-export class QueueProcessor {
-    private readonly BATCH_SIZE = 15;
-    private readonly MAX_WAIT_MILLIS = 10 * 1000;
+export class QueueProcessor extends Writable {
     private readonly productService: ProductService;
-    private queue: Queue
 
     constructor() {
-        this.queue = new Queue(this.processBatch.bind(this), {
-            batchSize: this.BATCH_SIZE,
-            maxWaitMillis: this.MAX_WAIT_MILLIS,
-        });
+        super({ objectMode: true });
         this.productService = new ProductService();
-        this.setupEventListener();
     }
 
-    private setupEventListener() {
-        queueEvent.subscribe(async (job: ProductJob) => {
-            logger.debug(`Received job to process. Product name ${job.name}`);
-            logger.debug('Adding product in queue to process');
-            this.queue.add(job);
+    /**
+     * Will be triggered when a new batch of products is received
+     * @param products 
+     * @param encoding 
+     * @param callback 
+     */
+    _write(products: ProductJob[], encoding: BufferEncoding, callback?: (error: Error | null | undefined) => void) {
+        logger.info(products, `Received batch of ${products.length} products`);
+        this.processBatch(products)
+        .then(() => {
+            logger.info(`Successfully processed batch of ${products.length} products`);
+            callback?.(null);
+        }).catch((error) => {
+            logger.error(error, 'Failed to process batch');
+            callback?.(null);
         });
+    }
 
-        parseEvent.subscribe(async (totalScrapedProducts: number) => {
-            logger.info(`Parsing done. Scraped ${totalScrapedProducts} products`);
-            await this.processScrapedProducts();
+    /**
+     * Will be triggered when the stream is finished
+     * https://github.com/nodejs/node/pull/12828
+     * @param cb 
+     * @returns 
+     */
+    _final(callback: (error?: Error | null) => void): void {
+        logger.info('Finished processing all products');
+        this.processScrapedProducts().then(() => {
+            logger.info('Finished processing all products');
+        }).catch((error) => {
+            logger.error(error, 'Failed to process all products');
+        }).finally(() => {
+            callback();
         });
     }
 

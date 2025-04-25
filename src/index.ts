@@ -2,10 +2,10 @@ import 'dotenv/config'; // Load environment variables from .env file
 import { setupServer } from './server.js';
 import logger from './core/logger.js';
 import config from './core/config.js';
-import { ScrapedProduct, scrapers } from './scrapers/index.js';
 import { setupEverything } from './setup.js';
-import { queueEvent, parseEvent } from './events.js';
-import { categoriesMap } from './constants.js';
+import { createBatchedProductStream } from './scrapers/scrape-runner.js';
+import { pipeline } from 'stream';
+import { QueueProcessor } from './services/queue.processor.js';
 
 function start() {
     if (config.isProduction) {
@@ -37,37 +37,46 @@ function start() {
 
 export function startScraping() {
     return new Promise<void>((resolve, reject) => {
-        let completedScrapers = 0;
-        let scrapedProducts = 0;
-        
-        scrapers.forEach(({ website, scraper }) => {
-            const scrapingEvent = scraper.scrape();
 
-            // scrapingEvent.onProducts(async (category, products) => {
-            //     logger.info(`Got ${products.length} products for ${category} for ${website.name} from the scraper`);
-            //     products.forEach(product => {
-            //         queueEvent.notify({
-            //             ...product,
-            //             category_id: categoriesMap[category],
-            //             website_id: website.website_id,
-            //         });
-            //     });
-            // });
-
-            scrapingEvent.onComplete((allProducts: ScrapedProduct[]) => {
-                scrapedProducts += allProducts.length;
-                completedScrapers++;
-                if (completedScrapers === scrapers.length) {
-                    parseEvent.notify(scrapedProducts);
-                    resolve();
-                }
-            });
-
-            scrapingEvent.onError((error) => {
-                logger.error(error, `Failed to scrape ${website.name}`);
-                reject(error);
-            });
+        const scrapedProductsStream = createBatchedProductStream();
+        pipeline(scrapedProductsStream, new QueueProcessor(), (err) => {
+            if (err) {
+                logger.error(err, 'Error in pipeline');
+                reject(err);
+            } else {
+                logger.info('Pipeline completed successfully');
+                resolve();
+            }
         });
+        
+        // scrapers.forEach(({ website, scraper }) => {
+        //     const scrapingEvent = scraper.scrape();
+
+        //     // scrapingEvent.onProducts(async (category, products) => {
+        //     //     logger.info(`Got ${products.length} products for ${category} for ${website.name} from the scraper`);
+        //     //     products.forEach(product => {
+        //     //         queueEvent.notify({
+        //     //             ...product,
+        //     //             category_id: categoriesMap[category],
+        //     //             website_id: website.website_id,
+        //     //         });
+        //     //     });
+        //     // });
+
+        //     scrapingEvent.onComplete((allProducts: ScrapedProduct[]) => {
+        //         scrapedProducts += allProducts.length;
+        //         completedScrapers++;
+        //         if (completedScrapers === scrapers.length) {
+        //             parseEvent.notify(scrapedProducts);
+        //             resolve();
+        //         }
+        //     });
+
+        //     scrapingEvent.onError((error) => {
+        //         logger.error(error, `Failed to scrape ${website.name}`);
+        //         reject(error);
+        //     });
+        // });
     });
 }
 

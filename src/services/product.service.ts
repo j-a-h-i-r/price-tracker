@@ -17,7 +17,7 @@ export class ProductService {
                 'iplp.created_at',
                 'iplp.updated_at',
                 'iplp.prices',
-            )
+            );
         if (filter.name) {
             query = query.where('iplp.name', 'ILIKE', `%${filter.name}%`);
         }
@@ -87,7 +87,7 @@ export class ProductService {
         `, [id]);
 
         if (rows.length === 0) {
-            return
+            return;
         }
         return rows[0];
     }
@@ -139,9 +139,9 @@ export class ProductService {
         return knex<ProductRawMetadata>('external_products')
         .select(
             'internal_product_id',
-            knex.raw("jsonb_agg(json_build_object('external_product_id', id, 'raw_metadata', raw_metadata)) as external_metadatas")
+            knex.raw('jsonb_agg(json_build_object(\'external_product_id\', id, \'raw_metadata\', raw_metadata)) as external_metadatas')
         )
-        .groupBy('internal_product_id')
+        .groupBy('internal_product_id');
     }
 
     async saveExternalProducts(products: ProductWithManufacturerId[]): Promise<ProductWithExternalIdAndManufacturer[]> {
@@ -321,10 +321,10 @@ export class ProductService {
                     const { hasMetadata, parseSuccess, parsedMetadata } = parser.parse(raw_metadata);
                     if (!hasMetadata) {
                         // Parser is not defined for this metadata
-                        return null
+                        return null;
                     }
                     if (parseSuccess) {
-                        return parsedMetadata
+                        return parsedMetadata;
                     } else {
                         failedToParse.push({
                             internal_product_id: internal_product_id,

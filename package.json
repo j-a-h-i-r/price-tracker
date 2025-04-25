@@ -64,6 +64,7 @@
     "@opentelemetry/sdk-node": "^0.200.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.30.0",
+    "@sindresorhus/merge-streams": "^4.0.0",
     "@types/express": "^5.0.1",
     "cheerio": "^1.0.0",
     "cross-env": "^7.0.3",
