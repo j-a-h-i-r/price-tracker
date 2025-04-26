@@ -1,16 +1,16 @@
-import { knex } from '../core/db.js';
-import { ExternalManufacturer, ExternalProduct, InternalProduct, InternalProductWebsites, InternalProductWithPrice, Manufacturer, ProductRawMetadata, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId } from '../types/product.types.js';
-import { Category } from '../constants.js';
-import { metadataParsers } from './metadata.service.js';
 import { ProductQuery } from '../api/products.js';
+import { Category } from '../constants.js';
+import { knex } from '../core/db.js';
 import logger from '../core/logger.js';
+import { ExternalManufacturer, ExternalProduct, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, ProductRawMetadata, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId } from '../types/product.types.js';
+import { metadataParsers } from './metadata.service.js';
 
 export class ProductService {
-    async getInternalProducts(filter: ProductQuery = {}): Promise<InternalProduct[]> {
+    async getInternalProducts(filter: ProductQuery = {}): Promise<InternalProductLastestPriceWithLowstAvailablePrice[]> {
         // If the name is a URL, we'll first try to directly fetch the product
         // by the URL
         let internalProductId = null;
-        if (/^https?:\/\//.test(filter.name)) {
+        if (filter.name && /^https?:\/\//.test(filter.name)) {
             const product = await knex<ExternalProduct>('external_products')
                 .select('internal_product_id')
                 .where('url', filter.name)
@@ -21,23 +21,24 @@ export class ProductService {
             }
         }
 
-        let query = knex<InternalProduct>('internal_products_latest_price as iplp')
+        let query = knex<InternalProductLatestPrice>('internal_products_latest_price as iplp')
             .select(
                 'iplp.id',
                 'iplp.name',
                 'iplp.category_id',
                 'iplp.manufacturer_id',
                 'iplp.raw_metadata',
+                // Override the parsed metadata if it was manually set
                 knex.raw('iplp.parsed_metadata || iplp.manual_metadata as parsed_metadata'),
                 'iplp.created_at',
                 'iplp.updated_at',
                 'iplp.prices',
             );
+        
         if (internalProductId) {
             query = query.where('iplp.id', internalProductId);
             return query;
         }
-
 
         if (filter.name) {
             query = query.where('iplp.name', 'ILIKE', `%${filter.name}%`);
@@ -62,9 +63,30 @@ export class ProductService {
             if (op && value) {
                 query = query.whereRaw(`iplp.prices @@ '$[*].price ${op} ${value}'`);
             }
-        } 
+        }
 
-        return query;
+        const products: InternalProductLatestPrice[] = await query;
+
+        // Now I want to add the `lowest_available_price` field to the products
+        // This is current available lowest price across all websites for the product
+
+        const productsWithLowestPrice = products.map((product) => {
+            const prices = product.prices;
+            const latestAvailablePrice = prices.reduce((acc, price) => {
+                if (price.is_available) {
+                    if (!acc || acc.price === null || price.price < acc.price) {
+                        acc = price;
+                    }
+                }
+                return acc;
+            });
+            return {
+                ...product,
+                lowest_available_price: latestAvailablePrice,
+            };
+        });
+
+        return productsWithLowestPrice;
     }
 
     async getInternalProductById(id: number): Promise<InternalProduct | undefined> {
