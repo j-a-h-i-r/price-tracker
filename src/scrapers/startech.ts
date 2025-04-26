@@ -109,10 +109,14 @@ export class StarTech extends BaseScraper {
         };
     }
 
-    private parsePrice($: cheerio.Root): number {
+    private parsePrice($: cheerio.Root): number | null {
         const priceTxt = $('td.product-info-data.product-price').text().trim();
         const curPriceTxt = priceTxt.match(/^[^\d]?[\d,.]+/gm)?.[0] ?? '';
-        return Number(curPriceTxt.replace(/[^\d]/gm, ''));
+        const curPriceCleaned = curPriceTxt.replace(/[^\d]/gm, '');
+        if (curPriceCleaned.length === 0) {
+            return null;
+        }
+        return Number(curPriceCleaned);
     }
 
     private parseAvailability($: cheerio.Root): boolean {

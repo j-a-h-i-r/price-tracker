@@ -48,6 +48,29 @@ export interface InternalProduct {
     parsed_metadata: ParsedMetadata;
 }
 
+interface LastestPrice {
+    price: number,
+    created_at: string,
+    website_id: number,
+    is_available: boolean
+}
+
+export interface InternalProductLatestPrice {
+    id: number,
+    name: string,
+    category_id: number,
+    manufacturer_id: number,
+    raw_metadata: Record<string, string>,
+    parsed_metadata: Record<string, string>,
+    created_at: string,
+    updated_at: string,
+    prices: LastestPrice[],
+}
+
+export interface InternalProductLastestPriceWithLowstAvailablePrice extends InternalProductLatestPrice {
+    lowest_available_price: LastestPrice
+}
+
 export interface InternalProductWithPrice extends InternalProduct {
     prices: {
         website_id: number
