@@ -37,7 +37,7 @@ export async function up(knex: Knex): Promise<void> {
 
 
 export async function down(knex: Knex): Promise<void> {
-    knex.schema
+    return knex.schema
     .raw('DROP VIEW internal_products_latest_price;')
     .raw('DROP VIEW external_products_latest_price;');
 }
