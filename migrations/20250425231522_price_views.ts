@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
-    knex.schema
+    return knex.schema
     .raw(`
         CREATE OR REPLACE VIEW external_products_latest_price as
         SELECT DISTINCT ON (external_product_id)
