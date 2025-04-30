@@ -16,6 +16,8 @@ declare global {
             ADMIN_TOKEN: string;
 
             SIGNOZ_ENDPOINT: string;
+            JWT_SECRET: string;
+            BASE_URL: string;
         }
     }
 }
