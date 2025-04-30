@@ -1,17 +1,14 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ProductService } from '../services/product.service.js';
 import { z } from 'zod';
+import { IdParam } from './types.js';
+import logger from '../core/logger.js';
 
 interface PriceQuery {
     from?: string;
     to?: string;
     limit?: number;
 }
-
-const IdParam = z.object({
-    id: z.string().transform(Number),
-});
-type IdParam = z.infer<typeof IdParam>;
 
 const StringFilter = z.string();
 type StringFilter = z.infer<typeof StringFilter>;
@@ -42,6 +39,38 @@ export default async function routes(fastify: FastifyInstance) {
             return;
         }
         return product;
+    });
+
+    fastify.post('/:id/track', async (req: FastifyRequest<{Params: IdParam}>, res) => {
+        if (!req.user) {
+            res.code(401).send({ error: 'Unauthorized' });
+            return;
+        }
+        const { email } = req.user;
+        const productId = req.params.id;
+        try {
+            await new ProductService().trackProduct(email, productId);
+            return true;
+        } catch (error) {
+            logger.error(error, 'Failed to track product');
+            return res.code(500).send(false);
+        }
+    });
+
+    fastify.delete('/:id/track', async (req: FastifyRequest<{Params: IdParam}>, res) => {
+        if (!req.user) {
+            res.code(401).send({ error: 'Unauthorized' });
+            return;
+        }
+        const { email } = req.user;
+        const productId = req.params.id;
+        try {
+            await new ProductService().untrackProduct(email, productId);
+            return true;
+        } catch (error) {
+            logger.error(error, 'Failed to untrack product');
+            return res.code(500).send(false);
+        }
     });
 
     // fastify.get<{ Params: { id: string } }>('/:id/matches', async (req, res) => {

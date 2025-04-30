@@ -4,6 +4,7 @@ import { knex } from '../core/db.js';
 import logger from '../core/logger.js';
 import { ExternalManufacturer, ExternalProduct, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, ProductRawMetadata, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId } from '../types/product.types.js';
 import { metadataParsers } from './metadata.service.js';
+import { getUserByEmail } from './user.service.js';
 
 export class ProductService {
     async getInternalProducts(filter: ProductQuery = {}): Promise<InternalProductLastestPriceWithLowstAvailablePrice[]> {
@@ -424,5 +425,58 @@ export class ProductService {
         return knex('categories')
             .select('*')
             .orderBy('name');
+    }
+
+    async getInternalProductCount(): Promise<number | null> {
+        const count = await knex('internal_products')
+            .count('* as count')
+            .first();
+        if (count) {
+            return Number(count.count);
+        }
+        return null;
+    }
+
+    async trackProduct(email: string, productId: number): Promise<void> {
+        const user = await getUserByEmail(email);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        const userId = user.id;
+        const existingProduct = await knex('tracked_products')
+            .where('user_id', userId)
+            .andWhere('internal_product_id', productId)
+            .first();
+        if (existingProduct) {
+            return;
+        }
+        await knex('tracked_products').insert({
+            user_id: userId,
+            internal_product_id: productId,
+        });
+    }
+
+    async untrackProduct(email: string, productId: number): Promise<void> {
+        const user = await getUserByEmail(email);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        const userId = user.id;
+        await knex('tracked_products')
+            .delete()
+            .where('user_id', userId)
+            .andWhere('internal_product_id', productId);
+    }
+
+    async getUserTrackedProducts(email: string): Promise<InternalProduct[]> {
+        const user = await getUserByEmail(email);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        const trackedProducts = await knex('tracked_products')
+            .join('internal_products', 'tracked_products.internal_product_id', 'internal_products.id')
+            .where('user_id', user.id)
+            .select('internal_products.*');
+        return trackedProducts;
     }
 }

@@ -105,4 +105,5 @@
   },
   "include": ["src/**/*", "migrations/**/*", "seeds/**/*", "knexfile.ts"],
   "exclude": ["node_modules", "dist"],
+  "files": ["types.d.ts", "src/api/types.ts"]
 }

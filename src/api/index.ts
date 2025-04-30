@@ -8,9 +8,13 @@ import categoryRoutes from './category.js';
 import metadataRoutes from './metadata.js';
 import dealRoutes from './deals.js';
 import filterRoutes from './filters.js';
+import authRoutes from './auth.js';
+import statsRoutes from './stats.js';
+import userRoutes from './user.js';
 import config from '../core/config.js';
 import { AUTH_ERRORS } from '../core/constants.js';
 import { ZodError } from 'zod';
+import jwt from 'jsonwebtoken';
 
 export default async function routes(fastify: FastifyInstance, options: any) {
     fastify.register(fastifyHelmet.default);
@@ -18,6 +22,12 @@ export default async function routes(fastify: FastifyInstance, options: any) {
 
     // Add hook to protect non-GET routes
     fastify.addHook('onRequest', async (request, reply) => {
+        console.log('Cookies:', request.cookies);
+        const authToken = request.cookies?.auth;
+        if (authToken && jwt.verify(authToken, config.jwtSecret)) {
+            // Token is valid, proceed with the request
+            request.user = jwt.decode(authToken) as { email: string };
+        }
         // Skip authentication for GET requests
         if (request.method === 'GET') {
             return;
@@ -48,4 +58,7 @@ export default async function routes(fastify: FastifyInstance, options: any) {
     fastify.register(metadataRoutes, { prefix: '/metadatas' });
     fastify.register(dealRoutes, { prefix: '/deals' });
     fastify.register(filterRoutes, { prefix: '/filters' });
+    fastify.register(authRoutes, { prefix: '/auth' });
+    fastify.register(statsRoutes, { prefix: '/stats' });
+    fastify.register(userRoutes, { prefix: '/user' });
 }
