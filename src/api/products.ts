@@ -25,6 +25,16 @@ const ProductQuerySchema = z.object({
 }).strict();
 export type ProductQuery = z.infer<typeof ProductQuerySchema>;
 
+const MergeProductsBodySchema = z.object({
+    productIds: z.array(z.number().transform(Number)).nonempty(),
+}).strict();
+export type MergeProductsBody = z.infer<typeof MergeProductsBodySchema>;
+
+const PriceTrackBodySchema = z.object({
+    target_price: z.string().or(z.number()).transform(Number),
+});
+type PriceTrackBody = z.infer<typeof PriceTrackBodySchema>;
+
 export default async function routes(fastify: FastifyInstance) {
     fastify.get('/', async (req: FastifyRequest<{Querystring: ProductQuery}>) => {
         const parsedQuery = ProductQuerySchema.parse(req.query);
@@ -41,15 +51,16 @@ export default async function routes(fastify: FastifyInstance) {
         return product;
     });
 
-    fastify.post('/:id/track', async (req: FastifyRequest<{Params: IdParam}>, res) => {
+    fastify.post('/:id/track', async (req: FastifyRequest<{Params: IdParam, Body: PriceTrackBody}>, res) => {
         if (!req.user) {
             res.code(401).send({ error: 'Unauthorized' });
             return;
         }
         const { email } = req.user;
         const productId = req.params.id;
+        const { target_price: targetPrice } = PriceTrackBodySchema.parse(req.body);
         try {
-            await new ProductService().trackProduct(email, productId);
+            await new ProductService().trackProduct(email, productId, targetPrice);
             return true;
         } catch (error) {
             logger.error(error, 'Failed to track product');
@@ -72,23 +83,6 @@ export default async function routes(fastify: FastifyInstance) {
             return res.code(500).send(false);
         }
     });
-
-    // fastify.get<{ Params: { id: string } }>('/:id/matches', async (req, res) => {
-    //     // figure out external products across all websites that are possibly the same product
-    //     // based on product name
-    //     const id = req.params?.id;
-    //     const product = await knex('external_products')
-    //         .where('id', id)
-    //         .first();
-    //     const { name, website_id, internal_product_id, category_id } = product;
-    //     return knex
-    //         .select('id', 'name', 'website_id', knex.raw('similarity(ep.name, ?) AS similarity', [name]))
-    //         .from('external_products AS ep')
-    //         .where(knex.raw('ep.name % ?', [name]))
-    //         .andWhere('ep.website_id', '<>', website_id)
-    //         .andWhere('ep.category_id', '=', category_id)
-    //         .orderBy('similarity', 'desc');
-    // });
 
     // Get all prices for a product with optional date range and limit
     fastify.get<{ Params: IdParam; Querystring: PriceQuery }>(
@@ -118,9 +112,43 @@ export default async function routes(fastify: FastifyInstance) {
         }
     );
 
-    fastify.get('/syncmetadata', async (req, reply) => {
-        return new ProductService().saveNormalizedMetadata();
+    fastify.put('/:id/merge', async (req: FastifyRequest<{Params: IdParam, Body: MergeProductsBody}>, reply) => {
+        // This is an admin only endpoint
+        if (!req.isAdmin) {
+            return reply.code(401).send({ error: 'Unauthorized' });
+        }
+        const { id } = IdParam.parse(req.params);
+        const { productIds } = MergeProductsBodySchema.parse(req.body);
+        const productService = new ProductService();
+        try {
+            await productService.mergeProducts(id, productIds);
+            return true;
+        } catch (error) {
+            logger.error(error, 'Failed to merge products');
+            return reply.code(500).send(false);
+        }
     });
+
+    fastify.put('/:id/ignore', async (req: FastifyRequest<{Params: IdParam, Body: MergeProductsBody}>, reply) => {
+        // This is an admin only endpoint
+        if (!req.isAdmin) {
+            return reply.code(401).send({ error: 'Unauthorized' });
+        }
+        const { id } = IdParam.parse(req.params);
+        const { productIds } = MergeProductsBodySchema.parse(req.body);
+        const productService = new ProductService();
+        try {
+            await productService.ignoreProducts(id, productIds);
+            return true;
+        } catch (error) {
+            logger.error(error, 'Failed to merge products');
+            return reply.code(500).send(false);
+        }
+    });
+
+    // fastify.get('/syncmetadata', async (req, reply) => {
+    //     return new ProductService().saveNormalizedMetadata();
+    // });
 
     // // Get a specific price record
     // fastify.get<{ Params: { id: string; priceId: string } }>(
