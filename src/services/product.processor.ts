@@ -2,6 +2,7 @@ import { ExternalManufacturer, ProductJob } from '../types/product.types.js';
 import { ProductService } from './product.service.js';
 import logger from '../core/logger.js';
 import { Writable } from 'stream';
+import { sendEmailForTrackedProducts } from './pricetrack.service.js';
 
 export class ScrapedProductsProcessor extends Writable {
     private readonly productService: ProductService;
@@ -70,6 +71,18 @@ export class ScrapedProductsProcessor extends Writable {
         } catch (error) {
             logger.error(error, 'Failed to save normalized metadata');
         }
+
+        try {
+            await this.productService.storePossibleSimilarProducts();
+        } catch (error) {
+            logger.error(error, 'Failed to store possible similar products');
+        }
+
+        setTimeout(() => {
+            logger.info('Finished processing all products. Checkign for tracked products');
+            sendEmailForTrackedProducts();
+        }
+        , 1000);
     }
 
     /**

@@ -2,7 +2,7 @@ import { ProductQuery } from '../api/products.js';
 import { Category } from '../constants.js';
 import { knex } from '../core/db.js';
 import logger from '../core/logger.js';
-import { ExternalManufacturer, ExternalProduct, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, ProductRawMetadata, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId } from '../types/product.types.js';
+import { ExternalManufacturer, ExternalProduct, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, PossibleProductMatch, ProductRawMetadata, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId, TrackedProductBelowPrice } from '../types/product.types.js';
 import { metadataParsers } from './metadata.service.js';
 import { getUserByEmail } from './user.service.js';
 
@@ -437,7 +437,7 @@ export class ProductService {
         return null;
     }
 
-    async trackProduct(email: string, productId: number): Promise<void> {
+    async trackProduct(email: string, productId: number, targetPrice: number): Promise<void> {
         const user = await getUserByEmail(email);
         if (!user) {
             throw new Error('User not found');
@@ -448,11 +448,17 @@ export class ProductService {
             .andWhere('internal_product_id', productId)
             .first();
         if (existingProduct) {
+            await knex('tracked_products').update({
+                target_price: targetPrice,
+            })
+            .where('user_id', userId)
+            .andWhere('internal_product_id', productId);
             return;
         }
         await knex('tracked_products').insert({
             user_id: userId,
             internal_product_id: productId,
+            target_price: targetPrice,
         });
     }
 
@@ -478,5 +484,151 @@ export class ProductService {
             .where('user_id', user.id)
             .select('internal_products.*');
         return trackedProducts;
+    }
+
+    /**
+     * Merge productIdsToMerge into productId. 
+     */
+    async mergeProducts(internalProductId: number, internalProductIdsToMerge: number[]): Promise<void> {
+        // 1 - Update all external products to point to the new productId
+        // 2 - Remove the internal products that are being merged
+
+        await knex.transaction(async (trx) => {
+            await trx('external_products')
+                .whereIn('internal_product_id', internalProductIdsToMerge)
+                .update({
+                    internal_product_id: internalProductId,
+                });
+
+            // Merge the parsed_metadata from the products being merged
+            // into the main product
+            await trx.raw(`
+                update internal_products ip1
+                set parsed_metadata = ip1.parsed_metadata || (
+	                select jsonb_object_agg(key, value)
+                    from internal_products ip2,
+                    jsonb_each(ip2.parsed_metadata) where ip2.id in (??)
+                )
+                where ip1.id = ?;
+            `, [internalProductIdsToMerge, internalProductId]
+            );
+                
+
+            await trx('internal_products')
+                .whereIn('id', internalProductIdsToMerge)
+                .delete();
+        });
+    }
+
+    async ignoreProducts(internalProductId: number, internalProductIdsToIgnore: number[]): Promise<void> {
+        await knex('similar_internal_products')
+            .update({marked_different: true})
+            .where('internal_product_1_id', internalProductId)
+            .whereIn('internal_product_2_id', internalProductIdsToIgnore);
+    }
+
+    async getPossibleSimilarProducts(): Promise<PossibleProductMatch[]> {
+        const { rows } = await knex.raw(`
+            select
+            internal_product_1_id as product_id,
+            ip1."name" as product_name,
+            json_agg(
+                json_build_object('product_id', internal_product_2_id, 'product_name', ip2.name, 'similarity_score', similarity_score)
+                order by similarity_score desc
+            ) as similar_products
+            from similar_internal_products sip
+            inner join internal_products ip1 on ip1.id = sip.internal_product_1_id
+            inner join internal_products ip2 on ip2.id = sip.internal_product_2_id
+            where sip.marked_different is false
+            group by internal_product_1_id, ip1."name" 
+            order by max(similarity_score) desc;
+        `);
+        return rows;
+    }
+
+    /**
+     * Store the possible similar products from different websites into the database. This function is suitable 
+     * for running in a schedule (for example after a new scrapping session is done).
+     * This function will store the similar products into the database and that can be 
+     * later queried
+     */
+    async storePossibleSimilarProducts(): Promise<void> {
+        await knex.raw(`
+            -- Adding internal manufacturer id to external products
+            with external_products_with_mfg as (
+                select 
+                    ep.id,
+                    ep."name",
+                    ep.category_id,
+                    m.id as manufacturer_id,
+                    ep.website_id,
+                    ep.internal_product_id
+                from external_products ep
+                inner join external_manufacturers em on ep.external_manufacturer_id = em.id
+                inner join manufacturers m on m.id = em.manufacturer_id
+            ),
+            -- Now basically joining external products with external products
+            -- and finding if the name is similar.
+            similar_products AS (
+                SELECT 
+                    p1.id as product_1_external_id,
+                    p1.internal_product_id  as product_1_internal_id, 
+                    p1.website_id as product_1_website_id,
+                    p2.id as product_2_external_id,
+                    p2.internal_product_id as product_2_internal_id,
+                    p2.website_id as product_2_website_id,
+                    similarity(p1.name, p2.name) as name_similarity
+                FROM external_products_with_mfg p1
+                INNER JOIN external_products_with_mfg p2 ON 
+                    p1.id < p2.id  -- Avoid self-matches and duplicate pairs
+                    AND p1.category_id = p2.category_id  -- Same category
+                    AND p1.manufacturer_id = p2.manufacturer_id  -- Same manufacturer
+                    and p1.website_id != p2.website_id -- must be different website
+                    and p1.internal_product_id != p2.internal_product_id -- must not be same product
+                WHERE 
+                    similarity(p1.name, p2.name) > 0.4  -- Adjust threshold as needed
+            )
+            insert into similar_internal_products (
+            internal_product_1_id, internal_product_2_id, external_product_1_id, external_product_2_id, external_product_1_website_id, external_product_2_website_id, similarity_score
+            )
+            SELECT 
+                product_1_internal_id,
+                product_2_internal_id,
+                product_1_external_id,
+                product_2_external_id,
+                product_1_website_id,
+                product_2_website_id,
+                name_similarity
+            FROM similar_products
+            ON CONFLICT (internal_product_1_id, internal_product_2_id) DO NOTHING;
+        `);
+        // TODO: Check if the similarity score changed in the on conflict clause
+    }
+
+    /**
+     * Get a list of users and the products they are tracking that are below the target price
+     * @returns 
+     */
+    async getTrackedProductsBelowTargetPrice(): Promise<TrackedProductBelowPrice[]> {
+        const { rows } = await knex.raw(`
+            select 
+                u.email,
+                json_agg(
+                    json_build_object(
+                        'current_price', eplp.price,
+                        'target_price', tp.target_price,
+                        'product_name', ip."name",
+                        'product_url', ep.url
+                    )
+                ) as products
+            from external_products_latest_price eplp
+            inner join external_products ep on ep.id = eplp.external_product_id
+            inner join internal_products ip on ip.id = ep.internal_product_id
+            inner join tracked_products tp on tp.internal_product_id = ip.id
+            inner join users u on u.id = tp.user_id
+            where eplp.price <= tp.target_price and eplp.is_available is true
+            group by u.id;`
+        );
+        return rows;
     }
 }

@@ -12,6 +12,8 @@ export async function up(knex: Knex): Promise<void> {
         FROM prices p
         ORDER BY p.external_product_id, p.created_at desc;
     `)
+    // This view seems shortsighted now. It is mostly useful for sending
+    // data to the frontend. Maybe multiple view with different granularity
     .raw(`
         CREATE OR REPLACE VIEW internal_products_latest_price as
         SELECT

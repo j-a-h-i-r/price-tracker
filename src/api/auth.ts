@@ -54,6 +54,6 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         });
 
         res
-        .send({ email});
+        .send({ email, isAdmin: req.isAdmin });
     });
 }

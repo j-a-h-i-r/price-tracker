@@ -103,3 +103,25 @@ export interface ExternalManufacturer {
     website_id: number;
     manufacturer_id?: number;
 }
+
+export interface PossibleProductMatch {
+    product_id: number,
+    product_name: string,
+    similar_products: {
+        product_id: number,
+        product_name: string,
+        similarity_score: number,
+    }[],
+}
+
+export interface TrackedProductResult {
+    current_price: number,
+    target_price: number,
+    product_name: string,
+    product_url: string,
+}
+
+export interface TrackedProductBelowPrice {
+    email: string,
+    products: TrackedProductResult[],
+}

@@ -15,6 +15,7 @@ export async function up(knex: Knex): Promise<void> {
         table.increments('id').primary();
         table.integer('user_id').notNullable();
         table.integer('internal_product_id').notNullable();
+        table.float('target_price').notNullable().comment('If lowest price is lower than this, notify the user');
         table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
         table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
         table.unique(['user_id', 'internal_product_id']);
