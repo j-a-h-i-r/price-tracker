@@ -5,8 +5,11 @@ type MetadataQuery = {
     category_id?: string, website_id?: string,
 };
 
-export default async function routes(fastify: FastifyInstance, options: any) {
+export default async function routes(fastify: FastifyInstance) {
     fastify.get('/', async (req: FastifyRequest<{Querystring: MetadataQuery}>, res) => {
+        if (!req.isAdmin) {
+            return res.status(403).send({ message: 'You are not authorized to access this resource' });
+        }
         // Return all metadata
         const { category_id, website_id } = req.query;
         const metadataSet = new Set();
@@ -31,6 +34,10 @@ export default async function routes(fastify: FastifyInstance, options: any) {
     });
 
     fastify.get('/:metadata', async (req: FastifyRequest<{ Params: { metadata: string }, Querystring: MetadataQuery }>, res) => {
+        if (!req.isAdmin) {
+            return res.status(403).send({ message: 'You are not authorized to access this resource' });
+        }
+        
         const metadataKey = req.params.metadata;
         const { category_id, website_id } = req.query;
         const metadataQuery = knex

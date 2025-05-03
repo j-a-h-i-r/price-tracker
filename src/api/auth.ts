@@ -12,7 +12,7 @@ interface VerifyAuthBody {
     token: string;
 }
 
-export default async function routes(fastify: FastifyInstance, options: any) {
+export default async function routes(fastify: FastifyInstance) {
     fastify.post('/new', async (req: FastifyRequest<{Body: NewAuthBody }>, res) => {
         const expiryMinutes = 10;
         const { email } = req.body;
