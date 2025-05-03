@@ -29,17 +29,11 @@ export default async function routes(fastify: FastifyInstance) {
             // Token is valid, proceed with the request
             request.user = jwt.decode(authToken) as { email: string };
         }
-        // Skip authentication for GET requests
-        if (request.method === 'GET') {
-            return;
-        }
 
         const token = request?.cookies?.ADMIN_TOKEN;
         if (token === config.adminToken) {
             request.isAdmin = true;
-            return;
         }
-        return reply.status(401).send({ error: AUTH_ERRORS.INVALID_TOKEN });
     });
 
     fastify.setErrorHandler((error, request, reply) => {
