@@ -1,15 +1,18 @@
-import { FastifyInstance } from 'fastify';
-import { knex } from '../core/db.js';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { getAllDeals } from '../services/deal.service.js';
+import { z } from 'zod';
 
-export default async function routes(fastify: FastifyInstance, options: any) {
-    fastify.get<{}>(
+const DealsQuerySchema = z.object({
+    days: z.coerce.number().max(30).default(7),
+}).strict();
+type DealsQuery = z.infer<typeof DealsQuerySchema>;
+
+export default async function routes(fastify: FastifyInstance) {
+    fastify.get(
         '/',
-        async (req, reply) => {
-            // Get products which have lower price compared to last 
-            // 1 week price
-            const deals = await getAllDeals();
-            console.log('Deals:', deals);
+        async (req: FastifyRequest<{Querystring: DealsQuery}>) => {
+            const { days } = DealsQuerySchema.parse(req.query);
+            const deals = await getAllDeals(days);
             return deals;
         }
     );

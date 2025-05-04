@@ -13,9 +13,9 @@ import statsRoutes from './stats.js';
 import userRoutes from './user.js';
 import potentialSimilarRoutes from './potentialsimilar.js';
 import config from '../core/config.js';
-import { AUTH_ERRORS } from '../core/constants.js';
 import { ZodError } from 'zod';
 import jwt from 'jsonwebtoken';
+import logger from '../core/logger.js';
 
 export default async function routes(fastify: FastifyInstance) {
     fastify.register(fastifyHelmet.default);
@@ -39,11 +39,17 @@ export default async function routes(fastify: FastifyInstance) {
     fastify.setErrorHandler((error, request, reply) => {
         // Handle specific error types
         if (error instanceof ZodError) {
-            console.error('ZodError:', error.issues);
+            logger.error(error.issues, 'ZodError in API');
             const errorMessage = error.issues
                 .map((issue, index) => `${index+1}/ ${issue.message}`)
                 .join(', ');
             return reply.status(400).send({ error: `Found following errors: ${errorMessage}` });
+        } else if (error?.file === 'postgres.c') {
+            // Error is probably coming from knex/PG
+            // Don't want to expose the error to the user
+            logger.error(error, 'Postgres error in API');
+            if (!config.isProduction) return error;
+            return reply.status(500).send({ error: 'Internal error' });
         }
         return error;
     });
