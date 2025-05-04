@@ -35,5 +35,5 @@ export const sdk = new NodeSDK({
   metricReader: metricReader,
 });
 
-export const fastifyOtelInstrumentation = new FastifyOtelInstrumentation.default({ servername: constants.OTLP_SERVICE_NAME });
+export const fastifyOtelInstrumentation = new FastifyOtelInstrumentation({ servername: constants.OTLP_SERVICE_NAME });
 fastifyOtelInstrumentation.setTracerProvider(opentelemetry.trace.getTracerProvider());
