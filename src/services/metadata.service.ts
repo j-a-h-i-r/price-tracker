@@ -138,6 +138,7 @@ const SIMParser: MetadataParser = {
 const USBParser: MetadataParser = {
     metadataKey: 'sim_esim',
     parse(metadata: Record<string, string>): ParserOutput {
+        // eslint-disable-next-line prefer-const
         let { USB: usb, 'USB Type-C / Thunderbolt Port': usb_port } = metadata;
         if (!usb && !usb_port) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };

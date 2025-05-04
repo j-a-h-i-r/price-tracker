@@ -8,7 +8,7 @@ import logger from '../core/logger.js';
  * Creates a stream of products from all scrapers.
  * Reading from this stream will produce scraped products.
  */
-export function createProductStream(): Readable {
+function createProductStream(): Readable {
     const streams = scrapers.map(({ scraper }) => {
         return Readable.from(scraper.scrapeProducts());
     });

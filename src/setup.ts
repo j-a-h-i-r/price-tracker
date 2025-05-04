@@ -18,7 +18,7 @@ export async function setupEverything() {
     return { task, otlpSdk: sdk };
 }
 
-export async function setupCron() {
+async function setupCron() {
     const cronScheduleString = `0 */${config.scrapeHourInterval} * * *`;
     logger.debug('Cron Schedule %s', cronScheduleString);
     
