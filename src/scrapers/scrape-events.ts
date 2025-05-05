@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { ScrapedProduct, ScrapeListener } from './scraper.types';
+import { ScrapedProduct, ScrapeListener } from './scraper.types.js';
 
 export class ScrapeConsumer {
     constructor(private emitter: EventEmitter) {}

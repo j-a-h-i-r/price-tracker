@@ -44,7 +44,7 @@ export default async function routes(fastify: FastifyInstance) {
                 .map((issue, index) => `${index+1}/ ${issue.message}`)
                 .join(', ');
             return reply.status(400).send({ error: `Found following errors: ${errorMessage}` });
-        } else if (error?.file === 'postgres.c') {
+        } else if ((error as any)?.file === 'postgres.c') {
             // Error is probably coming from knex/PG
             // Don't want to expose the error to the user
             logger.error(error, 'Postgres error in API');
