@@ -3,7 +3,6 @@ import qs from 'qs';
 import routes from './api/index.js';
 import logger from './core/logger.js';
 import config from './core/config.js';
-import devRoutes from './api/_dev.js';
 import { fastifyOtelInstrumentation } from './otlp.js';
 
 export async function setupServer() {
@@ -16,13 +15,8 @@ export async function setupServer() {
 
     // Register OpenTelemetry instrumentation for Fastify
     server.register(fastifyOtelInstrumentation.plugin());
-    
 
     server.register(routes, { prefix: '/api' });
-
-    if (!config.isProduction) {
-        server.register(devRoutes, { prefix: '/_dev' });
-    }
 
     try {
         const PORT: number = process.env.PORT ? Number(process.env.PORT) : 3000;
