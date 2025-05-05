@@ -479,10 +479,20 @@ export class ProductService {
         if (!user) {
             throw new Error('User not found');
         }
-        const trackedProducts = await knex('tracked_products')
-            .join('internal_products', 'tracked_products.internal_product_id', 'internal_products.id')
+        const trackedProducts = await knex
+            .select(
+                'ip.id as product_id',
+                'ip.name',
+                knex.raw('AVG(tp.target_price) as target_price'),
+                knex.min('eplp.price').as('current_price'),
+            )
+            .from('tracked_products as tp')
+            .join('internal_products as ip', 'tp.internal_product_id', 'ip.id')
+            .join('external_products as ep', 'ip.id', 'ep.internal_product_id')
+            .join('external_products_latest_price as eplp', 'ep.id', 'eplp.external_product_id')
             .where('user_id', user.id)
-            .select('internal_products.*');
+            .where('eplp.is_available', true)
+            .groupBy('ip.id');
         return trackedProducts;
     }
 
