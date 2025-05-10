@@ -22,6 +22,7 @@ const BooleanFilter = z.boolean();
 const ProductQuerySchema = z.object({
     name: StringFilter.optional(),
     price: NumericFilter.optional(),
+    limit: z.coerce.number().optional(),
 }).strict();
 export type ProductQuery = z.infer<typeof ProductQuerySchema>;
 

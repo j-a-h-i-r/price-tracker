@@ -66,6 +66,10 @@ export class ProductService {
             }
         }
 
+        if (filter.limit) {
+            query = query.limit(filter.limit);
+        }
+
         const products: InternalProductLatestPrice[] = await query;
 
         // Now I want to add the `lowest_available_price` field to the products
