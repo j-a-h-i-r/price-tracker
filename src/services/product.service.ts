@@ -2,7 +2,7 @@ import { ProductQuery } from '../api/products.js';
 import { Category } from '../constants.js';
 import { knex } from '../core/db.js';
 import logger from '../core/logger.js';
-import { ExternalManufacturer, ExternalProduct, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, PossibleProductMatch, ProductRawMetadata, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId, TrackedProductBelowPrice } from '../types/product.types.js';
+import { ExternalManufacturer, ExternalProduct, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, PossibleProductMatch, ProductRawMetadata, ProductWithExternalId, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId, TrackedProductBelowPrice } from '../types/product.types.js';
 import { metadataParsers } from './metadata.service.js';
 import { getUserByEmail } from './user.service.js';
 
@@ -35,7 +35,7 @@ export class ProductService {
                 'iplp.updated_at',
                 'iplp.prices',
             );
-        
+
         if (internalProductId) {
             query = query.where('iplp.id', internalProductId);
             return query;
@@ -161,7 +161,7 @@ export class ProductService {
                 FROM internal_products ip 
                 WHERE ip.id = ?;
         `, [id]);
-        
+
         if (rows.length === 0) {
             return;
         }
@@ -169,13 +169,13 @@ export class ProductService {
         return product;
     }
 
-    async savePrices(products: ProductWithExternalIdAndManufacturer[]): Promise<void> {
+    async savePrices(products: ProductWithExternalId[]): Promise<void> {
         const prices = products.map((product) => ({
             external_product_id: product.external_id,
             is_available: product.isAvailable,
             price: product.price,
         }));
-        
+
         await knex('prices').insert(prices);
     }
 
@@ -185,11 +185,11 @@ export class ProductService {
 
     async getRawProductMedatas(): Promise<ProductRawMetadata[]> {
         return knex<ProductRawMetadata>('external_products')
-        .select(
-            'internal_product_id',
-            knex.raw('jsonb_agg(json_build_object(\'external_product_id\', id, \'raw_metadata\', raw_metadata)) as external_metadatas')
-        )
-        .groupBy('internal_product_id');
+            .select(
+                'internal_product_id',
+                knex.raw('jsonb_agg(json_build_object(\'external_product_id\', id, \'raw_metadata\', raw_metadata)) as external_metadatas')
+            )
+            .groupBy('internal_product_id');
     }
 
     async saveExternalProducts(products: ProductWithManufacturerId[]): Promise<ProductWithExternalIdAndManufacturer[]> {
@@ -203,7 +203,7 @@ export class ProductService {
             // Don't include the internal_product_id since it will overwrite the existing one to null
         }));
 
-        const ids = await knex('external_products')
+        const externalProductIds = await knex('external_products')
             .insert(dbProducts)
             .onConflict(['url'])
             .merge(['name', 'url', 'raw_metadata'])
@@ -211,7 +211,7 @@ export class ProductService {
 
         return products.map((product, index) => ({
             ...product,
-            external_id: ids[index].id
+            external_id: externalProductIds[index].id
         }));
     }
 
@@ -235,7 +235,7 @@ export class ProductService {
         return await knex<ExternalManufacturer>('external_manufacturers')
             .insert(dbManufacturers)
             .onConflict(['name', 'website_id'])
-            .merge()
+            .ignore()
             .returning('*');
     }
 
@@ -276,18 +276,6 @@ export class ProductService {
         if (dbProducts.length > 0) {
             await knex('internal_products').insert(dbProducts);
         }
-    }
-
-    async associateProducts() {
-        return knex.raw(`
-            UPDATE external_products ep
-            SET internal_product_id = ip.id
-            FROM internal_products ip
-            WHERE
-                ep.name = ip.name
-                and ep.category_id = ip.category_id
-                and ep.internal_product_id is null;
-        `);
     }
 
     /**
@@ -455,8 +443,8 @@ export class ProductService {
             await knex('tracked_products').update({
                 target_price: targetPrice,
             })
-            .where('user_id', userId)
-            .andWhere('internal_product_id', productId);
+                .where('user_id', userId)
+                .andWhere('internal_product_id', productId);
             return;
         }
         await knex('tracked_products').insert({
@@ -526,7 +514,7 @@ export class ProductService {
                 where ip1.id = ?;
             `, [internalProductIdsToMerge, internalProductId]
             );
-                
+
 
             await trx('internal_products')
                 .whereIn('id', internalProductIdsToMerge)
@@ -536,7 +524,7 @@ export class ProductService {
 
     async ignoreProducts(internalProductId: number, internalProductIdsToIgnore: number[]): Promise<void> {
         await knex('similar_internal_products')
-            .update({marked_different: true})
+            .update({ marked_different: true })
             .where('internal_product_1_id', internalProductId)
             .whereIn('internal_product_2_id', internalProductIdsToIgnore);
     }
@@ -644,5 +632,25 @@ export class ProductService {
             group by u.id;`
         );
         return rows;
+    }
+
+    // manufacturer_name -> website_id -> ExternalManufacturer
+    async getExternalManufacturerMap(): Promise<Map<string, Map<number, ExternalManufacturer>>> {
+        const manufacturers = await this.getExternalManufacturers();
+        const manufacturerMap = new Map<string, Map<number, ExternalManufacturer>>();
+
+        manufacturers.forEach((manufacturer) => {
+            const { name, website_id } = manufacturer;
+            if (!manufacturerMap.has(name)) {
+                manufacturerMap.set(name, new Map<number, ExternalManufacturer>());
+            }
+            const websiteMap = manufacturerMap.get(name)!;
+            if (!websiteMap.has(website_id)) {
+                manufacturerMap.set(name, new Map<number, ExternalManufacturer>());
+            }
+            manufacturerMap.get(name)!.set(website_id, manufacturer);
+        });
+
+        return manufacturerMap;
     }
 }
