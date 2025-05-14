@@ -17,6 +17,11 @@ const emailer = new Email({
     }
     : {
         jsonTransport: true,
+    },
+    views: {
+        options: {
+            extension: 'hbs',
+        },
     }
 });
 
