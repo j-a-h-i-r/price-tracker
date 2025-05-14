@@ -51,7 +51,10 @@ export class ScrapedProductsProcessor extends Writable {
 
     private async postProcessScrapedProducts() {
         // Scraping session is done.
-        // First let's normalize the manufacturers
+
+        // First let's sync the manufacturers. We stored the external manufacturers for
+        // each batch. Now we'll sync all the new manufacturers with the internal manufacturers
+        // and associate the external manufacturers with the internal manufacturers
         try {
             logger.info('Syncing external and internal manufacturers');
             await this.productService.syncManufacturers();
@@ -97,51 +100,38 @@ export class ScrapedProductsProcessor extends Writable {
         }
         try {
             // Save the manufacturers in DB
-            const manufacturersMap = await this.processAndPersistExternalManufacturers(products);
-            const productsWithManufacturerIds = products.map((product) => ({
-                ...product,
-                external_manufacturer_id: manufacturersMap.get(product.website_id)!.get(product.manufacturer)!,
-            }));
-            const savedProducts = await this.productService.saveExternalProducts(productsWithManufacturerIds);
+
+            const manufacturers: Omit<ExternalManufacturer, 'id'>[] = products.map((product) => {
+                return {
+                    name: product.manufacturer,
+                    website_id: product.website_id,
+                };
+            });
+
+            // Save raw external manufacturers in DB
+            // If its a new manufacturer it will have null as the internal manufacturer id
+            await this.productService.saveExternalManufacturers(manufacturers);
+
+            // This is the only place where we know the name of the manufacturer for an external product
+            // So we'll fetch the external manufacturers and get the external manufacturer id
+            const manufacturersWebsiteMap = await this.productService.getExternalManufacturerMap();
+            const productsWithManufacturerId = products.map((product) => {
+                const externalManufacturerId = manufacturersWebsiteMap
+                    .get(product.manufacturer)!
+                    .get(product.website_id)!
+                    .id!;
+                return {
+                    ...product,
+                    external_manufacturer_id: externalManufacturerId,
+                };
+            });
+
+            const savedProducts = await this.productService.saveExternalProducts(productsWithManufacturerId);
             await this.productService.savePrices(savedProducts);
 
             logger.info(`Successfully processed batch of ${products.length} products`);
         } catch (error) {
             logger.error(error, 'Failed to process batch');
         }
-    }
-
-    private async processAndPersistExternalManufacturers(products: ProductJob[]) {
-        const manufacturersPerWebsite = new Map<number, Set<string>>();
-        products.forEach((product) => {
-            if (!manufacturersPerWebsite.has(product.website_id)) {
-                manufacturersPerWebsite.set(product.website_id, new Set());
-            }
-            manufacturersPerWebsite.get(product.website_id)!.add(product.manufacturer);
-        });
-        const distinctManufacturers: Omit<ExternalManufacturer, 'id'>[] = [];
-        manufacturersPerWebsite.forEach((manufacturers, website_id) => {
-            manufacturers.forEach((manufacturer) => {
-                distinctManufacturers.push({
-                    name: manufacturer,
-                    website_id,
-                });
-            });
-        });
-        // Save the manufacturers in the DB
-        const manufacturersWebsiteMap = new Map<number, Map<string, number>>();
-        if (distinctManufacturers.length === 0) {
-            logger.info('No manufacturers to process');
-            return manufacturersWebsiteMap;
-        }
-        const saved = await this.productService.saveExternalManufacturers(distinctManufacturers);
-        saved.forEach((manufacturer) => {
-            const { website_id, name, id } = manufacturer;
-            if (!manufacturersWebsiteMap.has(website_id)) {
-                manufacturersWebsiteMap.set(website_id, new Map());
-            }
-            manufacturersWebsiteMap.get(website_id)!.set(name, id);
-        });
-        return manufacturersWebsiteMap;
     }
 }

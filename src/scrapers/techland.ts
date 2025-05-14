@@ -8,11 +8,13 @@ import { getCategoryId } from '../constants.js';
 
 export class Techland extends BaseScraper {
     readonly categories: CategoryLink[] = [
-        {  category: 'Laptop', url: 'https://www.techlandbd.com/brand-laptops' },
-        {  category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' },
-        {  category: 'Phone', url: 'https://www.techlandbd.com/smartphone-and-tablet/smartphone' },
-        {  category: 'Monitor', url: 'https://www.techlandbd.com/monitor-and-display/computer-monitor' },
-        {  category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
+        { category: 'Laptop', url: 'https://www.techlandbd.com/brand-laptops' },
+        { category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' },
+        { category: 'Phone', url: 'https://www.techlandbd.com/smartphone-and-tablet/smartphone' },
+        { category: 'Monitor', url: 'https://www.techlandbd.com/monitor-and-display/computer-monitor' },
+        { category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
+        { category: 'Camera', url: 'https://www.techlandbd.com/shop-cameras' },
+        { category: 'Keyboard', url: 'https://www.techlandbd.com/accessories/computer-keyboard' },
     ];
 
     async fetchAllProductLinksForCategory(category: CategoryLink): Promise<string[]> {
@@ -44,10 +46,11 @@ export class Techland extends BaseScraper {
                 url: link,
                 category: category,
             }));
+            logger.info(`Found ${categoryProductLinks.length} products in ${categoryName} in Techland`);
             allProductLinks.push(...categoryProductLinks);
         }
 
-        logger.info(`Found ${allProductLinks.length} products`);
+        logger.info(`Found total ${allProductLinks.length} products in Techland`);
         for (const link of allProductLinks) {
             const { url: productUrl, category } = link;
             logger.debug(`Scraping ${productUrl}`);
