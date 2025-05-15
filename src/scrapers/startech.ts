@@ -48,6 +48,12 @@ export class StarTech extends BaseScraper {
             }));
             logger.info(`Found ${categoryProductLinks.length} products in ${categoryName} in StarTech`);
             allProductLinks.push(...categoryProductLinks);
+            
+            this.emitScrapeMetric(
+                categoryName,
+                categoryProductLinks.length,
+                StartTechWebsite.name,
+            );
         }
 
         logger.info(`Found total ${allProductLinks.length} products in StarTech`);
