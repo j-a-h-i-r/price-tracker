@@ -11,6 +11,7 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import config from './core/config.js';
 import constants from './core/constants.js';
+import { HostMetrics } from '@opentelemetry/host-metrics';
 
 const SIGNOZ_ENDPOINT = config.signozEndpoint;
 
@@ -30,6 +31,9 @@ const metricReader = new PeriodicExportingMetricReader({
 export const metricProvider = new MeterProvider({
   readers: [metricReader],
 });
+
+const hostMetrics = new HostMetrics({meterProvider: metricProvider});
+hostMetrics.start();
 
 export const sdk = new NodeSDK({
   // Register the service name and version
