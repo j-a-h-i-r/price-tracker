@@ -48,6 +48,13 @@ export class Techland extends BaseScraper {
             }));
             logger.info(`Found ${categoryProductLinks.length} products in ${categoryName} in Techland`);
             allProductLinks.push(...categoryProductLinks);
+            
+            // Emit metric for the number of products scraped in this category
+            this.emitScrapeMetric(
+                categoryName,
+                categoryProductLinks.length,
+                TechlandWebsite.name
+            );
         }
 
         logger.info(`Found total ${allProductLinks.length} products in Techland`);

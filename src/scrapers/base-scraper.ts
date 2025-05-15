@@ -2,6 +2,7 @@ import { CategoryName } from '../constants.js';
 import pThrottle from 'p-throttle';
 import { request } from 'undici';
 import { ProductJob } from '../types/product.types.js';
+import { scrapedWebsiteCategoryGauge } from '../monitoring/metrics.js';
 
 export interface CategoryLink {
     category: CategoryName;
@@ -36,6 +37,20 @@ export abstract class BaseScraper {
                 return response;
             });
         })(url);
+    }
+
+    /**
+     * Utlity function to emit metrics with number of products scraped
+     * in each category for a website
+     * @param category 
+     * @param count 
+     * @param websiteName 
+     */
+    emitScrapeMetric(category: CategoryName, count: number, websiteName: string) {
+        scrapedWebsiteCategoryGauge.record(count, {
+            category: category,
+            website: websiteName,
+        });
     }
 
     /**

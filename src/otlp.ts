@@ -3,6 +3,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
 import {
+  MeterProvider,
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 import FastifyOtelInstrumentation from '@fastify/otel';
@@ -24,6 +25,12 @@ const metricReader = new PeriodicExportingMetricReader({
   }),
 });
 
+// Create a meter provider. All the metrics will be created 
+// under "meter" derived from this provider
+export const metricProvider = new MeterProvider({
+  readers: [metricReader],
+});
+
 export const sdk = new NodeSDK({
   // Register the service name and version
   resource: resource,
@@ -31,8 +38,7 @@ export const sdk = new NodeSDK({
   traceExporter: new OTLPTraceExporter({
     url: `${SIGNOZ_ENDPOINT}/v1/traces`,
   }),
-  // OTLPMetricExporter will export metrics to the signoz backend
-  metricReader: metricReader,
+  serviceName: constants.OTLP_SERVICE_NAME,
 });
 
 export const fastifyOtelInstrumentation = new FastifyOtelInstrumentation({ servername: constants.OTLP_SERVICE_NAME });
