@@ -27,6 +27,7 @@ const config = {
     signozEndpoint: process.env.SIGNOZ_ENDPOINT ?? 'http://localhost:4318',
     jwtSecret: process.env.JWT_SECRET as Secret,
     baseUrl: process.env.BASE_URL,
+    authLinkExpiryMinutes: Number(process.env.AUTH_LINK_EXPIRY_MINUTES) || 10,
 };
 
 export default config;
