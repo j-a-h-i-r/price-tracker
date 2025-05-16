@@ -1,21 +1,17 @@
 
-A small utility Backend and API to check GPU prices and view price/availability trends.
+A small utility to compare prices across multiple websites, check price trends and track product for desired price tragets.
 
-> Right now, this project is hyper-local and only really useful for getting GPU prices in Bangladesh.
-
-#### Why?
-
-I got tired of manually refreshing GPU listings to see if there's any updates
+> Right now, this project is hyper-local and only really useful for getting prices in Bangladesh.
 
 ### Features
 
 Currently, following features are implemented,
 - Scraping price and availability information on regular intervals
-- API to get historical GPU price/availability data
-- Get email alerts when GPU price/availability changes
-- Compare the price/availability of multiple GPUs under same model number 
+- API to get historical product price/availability data
+- Get email alerts when price changes
+- Compare the price/availability of multiple products across multiple websites
 
-A frontend client for easy viewing is in progress...
+## Development Notes
 
 ### Setting up open telemetry in server
 
@@ -35,15 +31,15 @@ Install signoz on the host. They have a repo with docker compose set up.
 "Containers": {
     "3988d0cc48820ec2764da0e76c": {
         "Name": "price-tracker.web.1",
-        "EndpointID": "1b749ad75d78d971a",
-        "MacAddress": "46:6f:7f",
+        "EndpointID": "",
+        "MacAddress": "",
         "IPv4Address": "172.21.0.2/16",
         "IPv6Address": ""
     },
     "d061a0a71040329af624245924e": {
         "Name": "signoz-otel-collector",
-        "EndpointID": "cb738fd1834b1b96fcad2bab8d",
-        "MacAddress": "ee:4c:2e",
+        "EndpointID": "",
+        "MacAddress": "",
         "IPv4Address": "172.21.0.3/16",
         "IPv6Address": ""
     }
