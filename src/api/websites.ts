@@ -2,10 +2,8 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { scrapers } from '../scrapers/index.js';
 import { knex } from '../core/db.js';
 
-type GpuQuery = { name?: string, url?: string, slug?: string, website?: string };
-
-export default async function routes(fastify: FastifyInstance, options: any) {
-    fastify.get('/', async (req: FastifyRequest<{ Querystring: GpuQuery }>, res) => {
+export default async function routes(fastify: FastifyInstance) {
+    fastify.get('/', async () => {
         const websites = scrapers.map(({ website }) => {
             return {
                 ...website,
@@ -15,7 +13,7 @@ export default async function routes(fastify: FastifyInstance, options: any) {
         return websites;
     });
 
-    fastify.get('/:id/products', async (req: FastifyRequest<{ Params: { id: string } }>, res) => {
+    fastify.get('/:id/products', async (req: FastifyRequest<{ Params: { id: string } }>) => {
         const websiteId = req.params.id;
         return knex
             .select('*')
@@ -23,7 +21,7 @@ export default async function routes(fastify: FastifyInstance, options: any) {
             .where({website_id: websiteId});
     });
 
-    fastify.get('/:id/summary', async (req: FastifyRequest<{ Params: { id: string } }>, res) => {
+    fastify.get('/:id/summary', async (req: FastifyRequest<{ Params: { id: string } }>) => {
         const websiteId = req.params.id;
         const summary = await knex('external_products')
             .where({ website_id: websiteId })

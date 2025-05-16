@@ -3,7 +3,6 @@ import { FastifyInstance } from 'fastify';
 import fastifyHelmet from '@fastify/helmet';
 import productRoutes from './products.js';
 import websiteRoutes from './websites.js';
-import priceRoutes from './prices.js';
 import categoryRoutes from './category.js';
 import metadataRoutes from './metadata.js';
 import dealRoutes from './deals.js';
@@ -22,7 +21,7 @@ export default async function routes(fastify: FastifyInstance) {
     fastify.register(cookie);
 
     // Add hook to protect non-GET routes
-    fastify.addHook('onRequest', async (request, reply) => {
+    fastify.addHook('onRequest', async (request) => {
         request.isAdmin = false;
         const authToken = request.cookies?.auth;
         if (authToken && jwt.verify(authToken, config.jwtSecret)) {
@@ -57,7 +56,6 @@ export default async function routes(fastify: FastifyInstance) {
     fastify.register(categoryRoutes, { prefix: '/categories' });
     fastify.register(websiteRoutes, { prefix: '/websites' });
     fastify.register(productRoutes, { prefix: '/products' });
-    fastify.register(priceRoutes, { prefix: '/prices' });
     fastify.register(metadataRoutes, { prefix: '/metadatas' });
     fastify.register(dealRoutes, { prefix: '/deals' });
     fastify.register(filterRoutes, { prefix: '/filters' });
