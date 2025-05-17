@@ -644,10 +644,6 @@ export class ProductService {
             if (!manufacturerMap.has(name)) {
                 manufacturerMap.set(name, new Map<number, ExternalManufacturer>());
             }
-            const websiteMap = manufacturerMap.get(name)!;
-            if (!websiteMap.has(website_id)) {
-                manufacturerMap.set(name, new Map<number, ExternalManufacturer>());
-            }
             manufacturerMap.get(name)!.set(website_id, manufacturer);
         });
 
