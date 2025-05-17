@@ -113,6 +113,7 @@ export class ProductService {
                             'website_id', ep.website_id,
                             'price', p.price,
                             'url', ep.url,
+                            'product_name', ep.name,
                             'website', w.name,
                             'created_at', p.created_at,
                             'is_available', p.is_available
