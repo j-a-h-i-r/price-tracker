@@ -147,10 +147,6 @@ export default async function routes(fastify: FastifyInstance) {
         }
     });
 
-    // fastify.get('/syncmetadata', async (req, reply) => {
-    //     return new ProductService().saveNormalizedMetadata();
-    // });
-
     // // Get a specific price record
     // fastify.get<{ Params: { id: string; priceId: string } }>(
     //     '/:id/prices/:priceId',
