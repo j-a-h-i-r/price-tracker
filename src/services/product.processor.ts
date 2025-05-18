@@ -132,6 +132,7 @@ export class ScrapedProductsProcessor extends Writable {
             logger.info(`Successfully processed batch of ${products.length} products`);
         } catch (error) {
             logger.error(error, 'Failed to process batch');
+            logger.error(products, 'Batch of products that failed to process');
         }
     }
 }
