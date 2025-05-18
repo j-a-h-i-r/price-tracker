@@ -2,7 +2,7 @@ import { ProductQuery } from '../api/products.js';
 import { Category } from '../constants.js';
 import { knex } from '../core/db.js';
 import logger from '../core/logger.js';
-import { ExternalManufacturer, ExternalProduct, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, PossibleProductMatch, ProductRawMetadata, ProductWithExternalId, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId, TrackedProductBelowPrice } from '../types/product.types.js';
+import { ExternalManufacturer, ExternalProduct, ExternalProductAPI, ExternalProductPrice, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, PossibleProductMatch, ProductRawMetadata, ProductWithExternalId, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId, TrackedProductBelowPrice } from '../types/product.types.js';
 import { metadataParsers } from './metadata.service.js';
 import { getUserByEmail } from './user.service.js';
 
@@ -139,6 +139,34 @@ export class ProductService {
             return;
         }
         return rows[0];
+    }
+
+    async getExternalProductsByInternalProductId(internalProductId: number): Promise<ExternalProductAPI[]> {
+        const { rows } = await knex.raw(`
+            select 
+	            id as external_product_id,
+                website_id,
+                "name",
+                url
+            from external_products ep 
+            where ep.internal_product_id = ?;
+        `, [internalProductId]);
+        return rows;
+    }
+
+    async getExternalProductPrices(externalProductId: number, maxDays: number = 30): Promise<ExternalProductPrice[]> {
+        return knex
+            .from('prices')
+            .select(
+                'external_product_id',
+                'is_available',
+                'price',
+                'created_at',
+                'updated_at',
+            )
+            .where('external_product_id', externalProductId)
+            .andWhere('created_at', '>=', knex.raw(`NOW() - INTERVAL '${maxDays} days'`))
+            .orderBy('created_at', 'desc');
     }
 
     async getInternalProductWebsites(id: number): Promise<InternalProductWebsites | undefined> {

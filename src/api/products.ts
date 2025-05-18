@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ProductService } from '../services/product.service.js';
 import { z } from 'zod';
-import { IdParam } from './types.js';
+import { ExternalIdParam, IdParam } from './types.js';
 import logger from '../core/logger.js';
 
 interface PriceQuery {
@@ -244,4 +244,16 @@ export default async function routes(fastify: FastifyInstance) {
     //         return stats;
     //     }
     // );
+
+    // Get all external products for a specific internal product
+    fastify.get('/:id/externals', async (req: FastifyRequest<{Params: IdParam}>) => {
+        const { id } = IdParam.parse(req.params);
+        return new ProductService().getExternalProductsByInternalProductId(id);
+    });
+
+    // Get all prices for a specific external product
+    fastify.get('/:id/externals/:externalid/prices', async (req: FastifyRequest<{Params: ExternalIdParam}>) => {
+        const { externalid } = ExternalIdParam.parse(req.params);
+        return new ProductService().getExternalProductPrices(externalid);
+    });
 }

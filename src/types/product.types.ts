@@ -129,3 +129,18 @@ export interface TrackedProductBelowPrice {
     email: string,
     products: TrackedProductResult[],
 }
+
+export interface ExternalProductAPI {
+    external_product_id: number,
+    website_id: number,
+    name: string,
+    url: string,
+}
+
+export interface ExternalProductPrice {
+    external_product_id: number,
+    is_available: boolean,
+    price: number,
+    created_at: string,
+    updated_at: string,
+}
