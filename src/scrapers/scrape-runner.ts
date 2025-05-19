@@ -3,6 +3,8 @@ import { scrapers } from './index.js';
 import mergeStreams from '@sindresorhus/merge-streams';
 import { BatchTransform } from '../core/batch-stream.js';
 import logger from '../core/logger.js';
+import { ProductJob } from '../types/product.types.js';
+import { DedupeStream } from '../core/dedupestream.js';
 
 /**
  * Creates a stream of products from all scrapers.
@@ -29,9 +31,13 @@ export function createBatchedProductStream(batchSize: number = 100): Transform {
     const batchedTransformer = new BatchTransform({
         batchSize: batchSize,
     });
+    // Seen errors due to multiple items with the same URL. So adding 
+    // deduplication stream to remove duplicates.
+    const dedupeStream = new DedupeStream((item: ProductJob) => item.url);
     return pipeline(
         productStream,
         batchedTransformer,
+        dedupeStream,
         pipelineCallback,
     );
 }
