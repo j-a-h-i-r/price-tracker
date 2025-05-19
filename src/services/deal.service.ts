@@ -5,7 +5,13 @@ import { knex } from '../core/db.js';
  * @param days - Number of days to look back for price comparison
  * @returns 
  */
-export async function getAllDeals(days: number) {
+export async function getAllDeals(days: number, sortby: 'value' | 'percentage') {
+    let priceSortString = '';
+    if (sortby === 'value') {
+        priceSortString = 'mpw.max_price_last_days - lp.current_price desc';
+    } else if (sortby === 'percentage') {
+        priceSortString = '((mpw.max_price_last_days - lp.current_price) / mpw.max_price_last_days) desc';
+    }
     const { rows } = await knex.raw(`
         WITH LatestPrices AS (
             -- Select the most recent price for each external product
@@ -45,7 +51,7 @@ export async function getAllDeals(days: number) {
             lp.current_price < mpw.max_price_last_days
             AND lp.is_available IS TRUE -- doesn't make sense to show unavailable products
         ORDER BY
-            mpw.max_price_last_days - lp.current_price desc, ip.name asc, w.name asc;
+            ${priceSortString}, ip.name asc, w.name asc;
     `, [knex.raw(days)]);
     
     return rows;
