@@ -74,8 +74,11 @@ export class StarTech extends BaseScraper {
         }
     }
 
-    private async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
-        const pageUrl = `${url}?page=${pageNumber}`;
+
+    private async fetchListingPageHtml(url: string, pageNumber: number, limit: number = 90): Promise<string> {
+        // By default, each page has 20 items. But StarTech support 20, 24, 48, 75, 90 products
+        // per page. By setting limit to 90 we can speed up scraping by 4.5x
+        const pageUrl = `${url}?limit=${limit}&page=${pageNumber}`;
         const req = await this.fetchWithThrottle(pageUrl);
         return req.body.text();
     }

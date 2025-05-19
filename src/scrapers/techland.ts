@@ -76,8 +76,8 @@ export class Techland extends BaseScraper {
         }
     }
 
-    private async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
-        const pageUrl = `${url}?page=${pageNumber}`;
+    private async fetchListingPageHtml(url: string, pageNumber: number, limit: number = 100): Promise<string> {
+        const pageUrl = `${url}?limit=${limit}&page=${pageNumber}`;
         const req = await this.fetchWithThrottle(pageUrl);
         return req.body.text();
     }
