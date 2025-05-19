@@ -75,8 +75,12 @@ export class ScrapedProductsProcessor extends Writable {
             logger.error(error, 'Failed to save normalized metadata');
         }
 
+        // Calculate the similar products, associate them if the similarity is high enough
+        // and clean up the similar products for non-existing internal products
         try {
             await this.productService.storePossibleSimilarProducts();
+            await this.productService.autoMergeHighlySimilarProducts();
+            await this.productService.cleanUpSimilarProductsForNonExistingInternalProducts();
         } catch (error) {
             logger.error(error, 'Failed to store possible similar products');
         }

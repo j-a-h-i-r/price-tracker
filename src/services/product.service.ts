@@ -589,7 +589,7 @@ export class ProductService {
      * This function will store the similar products into the database and that can be 
      * later queried
      */
-    async storePossibleSimilarProducts(): Promise<void> {
+    async storePossibleSimilarProducts(minThreshold: number = 0.4): Promise<void> {
         await knex.raw(`
             -- Adding internal manufacturer id to external products
             with external_products_with_mfg as (
@@ -623,7 +623,15 @@ export class ProductService {
                     and p1.website_id != p2.website_id -- must be different website
                     and p1.internal_product_id != p2.internal_product_id -- must not be same product
                 WHERE 
-                    similarity(p1.name, p2.name) > 0.4  -- Adjust threshold as needed
+                    similarity(p1.name, p2.name) > ?  -- Adjust threshold as needed
+            ),
+            similar_products_deduped AS (
+            	SELECT * FROM (
+            		SELECT *,
+					ROW_NUMBER() over (partition by product_1_internal_id, product_2_internal_id order by name_similarity desc) as ranked 
+					FROM similar_products
+				) t
+				where t.ranked = 1
             )
             insert into similar_internal_products (
             internal_product_1_id, internal_product_2_id, external_product_1_id, external_product_2_id, external_product_1_website_id, external_product_2_website_id, similarity_score
@@ -636,10 +644,58 @@ export class ProductService {
                 product_1_website_id,
                 product_2_website_id,
                 name_similarity
-            FROM similar_products
-            ON CONFLICT (internal_product_1_id, internal_product_2_id) DO NOTHING;
+            FROM similar_products_deduped
+            ON CONFLICT (internal_product_1_id, internal_product_2_id) 
+                DO UPDATE SET
+                    similarity_score = EXCLUDED.similarity_score,
+                    external_product_1_id = EXCLUDED.external_product_1_id, 
+                    external_product_2_id = EXCLUDED.external_product_2_id, 
+                    external_product_1_website_id = EXCLUDED.external_product_1_website_id, 
+                    external_product_2_website_id = EXCLUDED.external_product_2_website_id,
+                    marked_different = false,
+                    updated_at = NOW();
+        `, [minThreshold]);
+    }
+
+    /**
+     * Automatically merge products that are highly similar.
+     * @param minThreshold 
+     */
+    async autoMergeHighlySimilarProducts(minThreshold: number = 0.9): Promise<void> {
+        const similarProducts = await knex.from('similar_internal_products')
+            .select(
+                'internal_product_1_id as product_id',
+                knex.raw('json_agg(internal_product_2_id) as similar_product_ids'),
+            )
+            .where('similarity_score', '>=', minThreshold)
+            .groupBy('internal_product_1_id');
+        
+        const mergeProducts = similarProducts.map(async (product) => {
+            const { product_id, similar_product_ids } = product;
+            return this.mergeProducts(product_id, similar_product_ids);
+        });
+
+        await Promise.all(mergeProducts);
+    }
+
+    /**
+     * If an internal product is deleted then it doesn't make sense to still keep it 
+     * in similar products table. 
+     */
+    async cleanUpSimilarProductsForNonExistingInternalProducts(): Promise<void> {
+        await knex.raw(`
+            delete from 
+                similar_internal_products sip 
+            where 
+                sip.internal_product_1_id not in (
+                    select id
+                    from internal_products ip
+                )
+                OR sip.internal_product_2_id not in (
+                    select id
+                    from internal_products ip
+                );
         `);
-        // TODO: Check if the similarity score changed in the on conflict clause
     }
 
     /**
