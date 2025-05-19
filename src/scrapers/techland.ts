@@ -101,8 +101,6 @@ export class Techland extends BaseScraper {
     }
 
     async parseProductPage(pageUrl: string): Promise<ScrapedProduct> {
-        logger.debug(`Scraping ${pageUrl}`);
-
         const req = await this.fetchWithThrottle(pageUrl);
         const html = await req.body.text();
         const $ = cheerio.load(html);
