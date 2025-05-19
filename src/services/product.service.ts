@@ -98,6 +98,12 @@ export class ProductService {
         return knex<InternalProduct>('internal_products').select('*').where('id', id).first();
     }
 
+    async updateInternalProduct(id: number, product: Partial<InternalProduct>): Promise<void> {
+        await knex<InternalProduct>('internal_products')
+            .update(product)
+            .where('id', id);
+    }
+
     async getInternalProductPrices(id: number): Promise<InternalProductWithPrice | undefined> {
         const { rows } = await knex.raw(`
             SELECT 

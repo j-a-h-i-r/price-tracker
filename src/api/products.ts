@@ -26,6 +26,11 @@ const ProductQuerySchema = z.object({
 }).strict();
 export type ProductQuery = z.infer<typeof ProductQuerySchema>;
 
+const ProductPutBodySchema = z.object({
+    name: z.string().optional(),
+}).strict();
+export type ProductPutBody = z.infer<typeof ProductPutBodySchema>;
+
 const MergeProductsBodySchema = z.object({
     productIds: z.array(z.number().transform(Number)).nonempty(),
 }).strict();
@@ -50,6 +55,23 @@ export default async function routes(fastify: FastifyInstance) {
             return;
         }
         return product;
+    });
+
+    fastify.put('/:id', async (req: FastifyRequest<{Params: IdParam, Body: ProductPutBody}>, res) => {
+        if (!req.isAdmin) {
+            return res.code(401).send({ error: 'Unauthorized' });
+        }
+        
+        const { id } = IdParam.parse(req.params);
+        const { name } = ProductPutBodySchema.parse(req.body);
+        try {
+            await new ProductService().updateInternalProduct(id, { name });
+            return true;
+        }
+        catch (error) {
+            logger.error(error, 'Failed to update product');
+            return res.code(500).send(false);
+        }
     });
 
     fastify.post('/:id/track', async (req: FastifyRequest<{Params: IdParam, Body: PriceTrackBody}>, res) => {
