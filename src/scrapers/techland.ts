@@ -112,7 +112,7 @@ export class Techland extends BaseScraper {
             productInfo[key] = value;
         });
 
-        const price = productInfo['product price']?.replace(',', '').replace('৳', '');
+        const price = productInfo['special price']?.replace(',', '').replace('৳', '');
         const availability = productInfo['Stock Status'] === 'In Stock';
         const brand = productInfo['Brand'] ?? '';
 
