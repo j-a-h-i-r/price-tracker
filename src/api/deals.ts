@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { getAllDeals } from '../services/deal.service.js';
 import { z } from 'zod';
+import { cache } from '../core/cache.js';
 
 const DealsQuerySchema = z.object({
     days: z.coerce.number().max(30).default(7),
@@ -13,10 +14,17 @@ export default async function routes(fastify: FastifyInstance) {
         '/',
         async (req: FastifyRequest<{Querystring: DealsQuery}>) => {
             const { days, sortby } = DealsQuerySchema.parse(req.query);
+            const queryString = JSON.stringify({days, sortby});
+            const cacheKey = `deals:${queryString}`;
+            const cachedDeals = cache.get(cacheKey);
+            if (cachedDeals) {
+                return cachedDeals;
+            }
             const { tracer } = req.opentelemetry();
             const dbSpan = tracer.startSpan('database');
             const deals = await getAllDeals(days, sortby);
             dbSpan.end();
+            cache.set(cacheKey, deals);
             return deals;
         }
     );

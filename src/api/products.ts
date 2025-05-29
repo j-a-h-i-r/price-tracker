@@ -3,6 +3,7 @@ import { ProductService } from '../services/product.service.js';
 import { z } from 'zod';
 import { ExternalIdParam, IdParam } from './types.js';
 import logger from '../core/logger.js';
+import { cache } from '../core/cache.js';
 
 interface PriceQuery {
     from?: string;
@@ -44,7 +45,18 @@ type PriceTrackBody = z.infer<typeof PriceTrackBodySchema>;
 export default async function routes(fastify: FastifyInstance) {
     fastify.get('/', async (req: FastifyRequest<{Querystring: ProductQuery}>) => {
         const parsedQuery = ProductQuerySchema.parse(req.query);
-        return new ProductService().getInternalProducts(parsedQuery);
+        const queryText = JSON.stringify(parsedQuery);
+        const cacheKey = `products:${queryText}`;
+        const cached = cache.get(cacheKey);
+        if (!cached) {
+            logger.info(`Cache miss for ${cacheKey}`);
+            const products = await new ProductService().getInternalProducts(parsedQuery);
+            cache.set(cacheKey, products);
+            return products;
+        } else {
+            logger.info(`Cache hit for ${cacheKey}`);
+            return cached;
+        }
     });
 
     fastify.get<{ Params: IdParam }>('/:id', async (req, res) => {

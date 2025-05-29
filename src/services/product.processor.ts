@@ -3,6 +3,7 @@ import { ProductService } from './product.service.js';
 import logger from '../core/logger.js';
 import { Writable } from 'stream';
 import { sendEmailForTrackedProducts } from './pricetrack.service.js';
+import { cache } from '../core/cache.js';
 
 export class ScrapedProductsProcessor extends Writable {
     private readonly productService: ProductService;
@@ -83,6 +84,14 @@ export class ScrapedProductsProcessor extends Writable {
             await this.productService.cleanUpSimilarProductsForNonExistingInternalProducts();
         } catch (error) {
             logger.error(error, 'Failed to store possible similar products');
+        }
+
+        // Invalidate the cache for the products
+        try {
+            logger.info('Invalidating cache for products');
+            cache.clear();
+        } catch (error) {
+            logger.error(error, 'Failed to invalidate cache for products');
         }
 
         setTimeout(() => {
