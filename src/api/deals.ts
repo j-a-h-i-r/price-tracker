@@ -13,7 +13,10 @@ export default async function routes(fastify: FastifyInstance) {
         '/',
         async (req: FastifyRequest<{Querystring: DealsQuery}>) => {
             const { days, sortby } = DealsQuerySchema.parse(req.query);
+            const { tracer } = req.opentelemetry();
+            const dbSpan = tracer.startSpan('database');
             const deals = await getAllDeals(days, sortby);
+            dbSpan.end();
             return deals;
         }
     );
