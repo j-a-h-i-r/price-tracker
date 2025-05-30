@@ -20,7 +20,7 @@ export class Techland extends BaseScraper {
     async fetchAllProductLinksForCategory(category: CategoryLink): Promise<string[]> {
         const { url: categoryUrl } = category;
         const firstPageHtml = await this.fetchListingPageHtml(categoryUrl, 1);
-        const pageCount = this.parsePageCount(firstPageHtml);
+        const pageCount = this.parsePageCount(firstPageHtml) ?? 1;
         const productLinks: string[] = [];
 
         for (let i = 1; i <= pageCount; i++) {
