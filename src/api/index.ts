@@ -10,6 +10,7 @@ import filterRoutes from './filters.js';
 import authRoutes from './auth.js';
 import statsRoutes from './stats.js';
 import userRoutes from './user.js';
+import usersRoutes from './users.js';
 import potentialSimilarRoutes from './potentialsimilar.js';
 import config from '../core/config.js';
 import { ZodError } from 'zod';
@@ -61,6 +62,7 @@ export default async function routes(fastify: FastifyInstance) {
     fastify.register(filterRoutes, { prefix: '/filters' });
     fastify.register(authRoutes, { prefix: '/auth' });
     fastify.register(statsRoutes, { prefix: '/stats' });
+    fastify.register(usersRoutes, { prefix: '/users' });
     fastify.register(userRoutes, { prefix: '/user' });
     fastify.register(potentialSimilarRoutes, { prefix: '/potentialsimilar' });
 }

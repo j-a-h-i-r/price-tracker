@@ -15,3 +15,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     return user;
 }
 
+export async function listUsers(): Promise<User[]> {
+    const users = await knex('users').select('*');
+    return users;
+}
