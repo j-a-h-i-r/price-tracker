@@ -20,7 +20,7 @@ export class Techland extends BaseScraper {
     async fetchAllProductLinksForCategory(category: CategoryLink): Promise<string[]> {
         const { url: categoryUrl } = category;
         const firstPageHtml = await this.fetchListingPageHtml(categoryUrl, 1);
-        const pageCount = this.parsePageCount(firstPageHtml) ?? 1;
+        const pageCount = this.parsePageCount(firstPageHtml);
         const productLinks: string[] = [];
 
         for (let i = 1; i <= pageCount; i++) {
@@ -86,6 +86,10 @@ export class Techland extends BaseScraper {
         const $ = cheerio.load(html);
         const lastPageLink = $('#content > div.main-products-wrapper > div.row.pagination-results > div.col-sm-6.text-left > ul > li:last-child > a').attr('href') ?? '';
         const params = new URLSearchParams(lastPageLink.split('?')[1]);
+        if (!params.has('page')) {
+            logger.warn('No page parameter found in last page link');
+            return 1;
+        }
         return Number(params.get('page'));
     }
 
