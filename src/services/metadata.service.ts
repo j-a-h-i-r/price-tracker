@@ -1,18 +1,21 @@
 import { knex } from '../core/db.js';
 
+export type MetadataDataType = 'string' | 'integer' | 'float' | 'boolean';
+
 export type ParsedMetadata = Partial<{
     ram: string;
-    weight: string;
+    weight: number;
     sim_esim: boolean;
     usb_type_c: boolean;
     usb_thunderbolt: boolean;
     usb_version: '2' | '3';
+    gpu_memory: number;
 }>
 
 export type MetadataKey = keyof ParsedMetadata;
 export type MetadataProperty = {
     displayName: string;
-    dataType?: 'string' | 'number' | 'boolean';
+    dataType?: MetadataDataType;
     unit?: string;
 }
 
@@ -44,12 +47,12 @@ export interface MetadataParser {
 export const MetadataDefinitions: Record<MetadataKey, MetadataProperty> ={
     ram: {
         displayName: 'RAM',
-        dataType: 'number',
+        dataType: 'integer',
         unit: 'GB',
     },
     weight: {
         displayName: 'Weight',
-        dataType: 'number',
+        dataType: 'float',
         unit: 'gm',
     },
     sim_esim: {
@@ -68,6 +71,11 @@ export const MetadataDefinitions: Record<MetadataKey, MetadataProperty> ={
         displayName: 'USB Version',
         dataType: 'string',
     },
+    gpu_memory: {
+        displayName: 'GPU Memory',
+        dataType: 'integer',
+        unit: 'GB',
+    }
 };
 
 const RAMParser: MetadataParser = {
@@ -90,6 +98,31 @@ const RAMParser: MetadataParser = {
             hasMetadata: true,
             parseSuccess: true,
             parsedMetadata: { [this.metadataKey]: ramAmountNumeric }
+        };
+    }
+};
+
+const GPUMemoryParser: MetadataParser = {
+    metadataKey: 'gpu_memory',
+    parse(metadata: Record<string, string>): ParserOutput {
+        const { 'GPU Memory Size': gpuMemorySize, 'Graphics Memory': graphicsMemory } = metadata;
+        if (!gpuMemorySize && !graphicsMemory) {
+            return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
+        }
+        const gpuMemory = gpuMemorySize || graphicsMemory;
+        const groups = /(?<gpu_amount>\d+)\s*(?<gpu_memory_unit>GB|MB)/i.exec(gpuMemory)?.groups;
+        if (!groups) {
+            return { hasMetadata: true, parseSuccess: false, parsedMetadata: gpuMemory };
+        }
+        const { gpu_amount, gpu_memory_unit } = groups;
+        let gpumMemoryNumeric = Number(gpu_amount);
+        if (gpu_memory_unit.toLowerCase() === 'mb') {
+            gpumMemoryNumeric = gpumMemoryNumeric / 1024;
+        }
+        return {
+            hasMetadata: true,
+            parseSuccess: true,
+            parsedMetadata: { [this.metadataKey]: gpumMemoryNumeric }
         };
     }
 };
@@ -176,6 +209,7 @@ export const metadataParsers: MetadataParser[] = [
     WeightParser,
     SIMParser,
     USBParser,
+    GPUMemoryParser,
 ];
 
 function fetchMinMaxValues(metadata: MetadataKey)  {
@@ -198,7 +232,10 @@ export async function metadataFilters() {
     const filters = await Promise.all(Object.keys(MetadataDefinitions).map(async (key) => {
         const metadataKey = key as MetadataKey;
         const metadataProperty = MetadataDefinitions[metadataKey];
-        if (metadataProperty.dataType === 'number') {
+        if (
+            metadataProperty?.dataType
+            && ['integer', 'float'].includes(metadataProperty.dataType)
+        ) {
             const { min, max } = await fetchMinMaxValues(metadataKey);
             return {
                 key: metadataKey,

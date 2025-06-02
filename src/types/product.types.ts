@@ -35,12 +35,9 @@ export interface ExternalProduct {
     updated_at: Date;
 }
 
-export interface ProductRawMetadata {
-    internal_product_id: number;
-    external_metadatas: {
-        external_product_id: number;
-        raw_metadata: Record<string, string>;
-    }[]
+export interface ExternalProductRawMetadata {
+    external_product_id: number;
+    raw_metadata: Record<string, string>;
 }
 
 export interface InternalProduct {
@@ -143,4 +140,22 @@ export interface ExternalProductPrice {
     price: number,
     created_at: string,
     updated_at: string,
+}
+
+export interface ProductVariant {
+    name: string;
+    values: {
+        value: string;
+        display_text: string;
+    }[];
+    display_text: string;
+    unit: string;
+}
+
+export interface ExternalProductMetadata {
+    name: string;
+    value: string;
+    unit: string;
+    name_display_text: string;
+    value_display_text: string;
 }
