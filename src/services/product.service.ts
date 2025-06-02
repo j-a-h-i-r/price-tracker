@@ -2,9 +2,10 @@ import { ProductQuery } from '../api/products.js';
 import { Category } from '../constants.js';
 import { knex } from '../core/db.js';
 import logger from '../core/logger.js';
-import { ExternalManufacturer, ExternalProduct, ExternalProductAPI, ExternalProductPrice, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, PossibleProductMatch, ProductRawMetadata, ProductWithExternalId, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId, TrackedProductBelowPrice } from '../types/product.types.js';
-import { metadataParsers } from './metadata.service.js';
+import { ExternalManufacturer, ExternalProduct, ExternalProductAPI, ExternalProductPrice, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, PossibleProductMatch, ExternalProductRawMetadata, ProductWithExternalId, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId, TrackedProductBelowPrice, ProductVariant, ExternalProductMetadata } from '../types/product.types.js';
+import { MetadataDefinitions, MetadataKey, metadataParsers } from './metadata.service.js';
 import { getUserByEmail } from './user.service.js';
+import { VariantAttributes } from './variant.service.js';
 
 export class ProductService {
     async getInternalProducts(filter: ProductQuery = {}): Promise<InternalProductLastestPriceWithLowstAvailablePrice[]> {
@@ -147,7 +148,24 @@ export class ProductService {
         return rows[0];
     }
 
-    async getExternalProductsByInternalProductId(internalProductId: number): Promise<ExternalProductAPI[]> {
+    async getExternalProductsByInternalProductId(internalProductId: number, variants: Partial<Record<MetadataKey, string>> = {}): Promise<ExternalProductAPI[]> {
+        if (Object.keys(variants).length > 0) {
+            // If variants are provided, we will filter the external products by the variants
+            const variantConditions = Object.keys(variants).map((variant) => {
+                const filterVal = `${variants[variant as MetadataKey]}`;
+                return knex.raw(`(parsed_metadata ->> '${variant}')::text = ?`, [filterVal]);
+            }).join(' AND ');
+
+            return knex<ExternalProductAPI>('external_products')
+                .select(
+                    'id as external_product_id',
+                    'website_id',
+                    'name',
+                    'url',
+                )
+                .where('internal_product_id', internalProductId)
+                .andWhereRaw(variantConditions);
+        }
         const { rows } = await knex.raw(`
             select 
 	            id as external_product_id,
@@ -218,13 +236,12 @@ export class ProductService {
         return knex<ExternalProduct>('external_products').select('*');
     }
 
-    async getRawProductMedatas(): Promise<ProductRawMetadata[]> {
-        return knex<ProductRawMetadata>('external_products')
+    async getExternalProductsRawMedatas(): Promise<ExternalProductRawMetadata[]> {
+        return knex<ExternalProductRawMetadata>('external_products')
             .select(
-                'internal_product_id',
-                knex.raw('jsonb_agg(json_build_object(\'external_product_id\', id, \'raw_metadata\', raw_metadata)) as external_metadatas')
-            )
-            .groupBy('internal_product_id');
+                'id as external_product_id',
+                'raw_metadata',
+            );
     }
 
     async saveExternalProducts(products: ProductWithManufacturerId[]): Promise<ProductWithExternalIdAndManufacturer[]> {
@@ -376,56 +393,43 @@ export class ProductService {
     }
 
     async saveNormalizedMetadata() {
-        const rawMetadatas = await this.getRawProductMedatas();
+        const rawMetadatas = await this.getExternalProductsRawMedatas();
         const failedToParse: any[] = [];
         const normazlizedProducts = rawMetadatas.map((product) => {
-            const { internal_product_id, external_metadatas } = product;
-            const mergedRawMetadata = external_metadatas.reduce((acc, { raw_metadata }) => {
-                return {
-                    ...acc,
-                    ...raw_metadata,
-                };
-            }, {});
-
+            const { external_product_id, raw_metadata } = product;
+            
             const parsedMetadatas = metadataParsers.reduce((acc, parser) => {
-                return external_metadatas.map(({ external_product_id, raw_metadata }) => {
-                    const { hasMetadata, parseSuccess, parsedMetadata } = parser.parse(raw_metadata);
-                    if (!hasMetadata) {
-                        // Parser is not defined for this metadata
-                        return null;
-                    }
-                    if (parseSuccess) {
-                        return parsedMetadata;
-                    } else {
-                        failedToParse.push({
-                            internal_product_id: internal_product_id,
-                            external_product_id: external_product_id,
-                            metadata_key: parser.metadataKey,
-                            metadata_value: parsedMetadata,
-                        });
-                        return null;
-                    }
-                })
-                .filter((parsedMetadata) => parsedMetadata !== null)
-                .reduce((acc, parsedMetadata) => {
+                const { hasMetadata, parseSuccess, parsedMetadata } = parser.parse(raw_metadata);
+                if (!hasMetadata) {
+                    // Parser is not defined for this metadata
+                    return acc;
+                }
+                if (parseSuccess) {
                     return {
                         ...acc,
                         ...parsedMetadata,
                     };
-                }, acc);
+                } else {
+                    failedToParse.push({
+                        external_product_id: external_product_id,
+                        metadata_key: parser.metadataKey,
+                        metadata_value: parsedMetadata,
+                    });
+                    return acc;
+                }
             }, {});
 
             return {
-                internal_product_id: product.internal_product_id,
+                external_product_id: external_product_id,
                 parsed_metadata: parsedMetadatas,
-                raw_metadata: mergedRawMetadata,
+                raw_metadata: raw_metadata,
             };
         });
 
         await knex.transaction(async (trx) => {
             await trx.raw(`
                 CREATE TEMPORARY TABLE temp_product_normalized_metadata (
-                    internal_product_id INTEGER,
+                    external_product_id INTEGER,
                     parsed_metadata JSONB,
                     raw_metadata JSONB
                 );
@@ -433,13 +437,13 @@ export class ProductService {
 
             await trx('temp_product_normalized_metadata').insert(normazlizedProducts);
             await trx.raw(`
-                UPDATE internal_products ip
+                UPDATE external_products ep
                 SET
                     parsed_metadata = COALESCE(temp.parsed_metadata, '{}'),
                     raw_metadata = COALESCE(temp.raw_metadata, '{}')
                 FROM temp_product_normalized_metadata temp
                 WHERE
-                    ip.id = temp.internal_product_id;
+                    ep.id = temp.external_product_id;
             `);
             await trx.insert(failedToParse).into('pending_metadata_reviews').onConflict().ignore();
             await trx.raw(`
@@ -739,5 +743,79 @@ export class ProductService {
         });
 
         return manufacturerMap;
+    }
+
+    /**
+     * For a given product, get the variant attributes that are available for that product.
+     * @param internalProductId 
+     * @returns 
+     */
+    async getVariantAttributesForProduct(internalProductId: number): Promise<ProductVariant[]> {
+        const variantKeys = Object.keys(VariantAttributes);
+        const { rows } = await knex.raw(`
+            select 
+                key as attribute_name,
+                jsonb_agg(distinct(value) order by value) as attribute_values
+            from external_products ep, jsonb_each(ep.parsed_metadata::jsonb)
+            where
+                ep.internal_product_id = ?
+                and key = ANY(?)
+            group by key;
+        `, [internalProductId, variantKeys]);
+
+        const variants = rows.map((row: any) => {
+            const { attribute_name, attribute_values } = row;
+            const attributeDetail = VariantAttributes[attribute_name as MetadataKey];
+            const values = attribute_values.map((value: any) => {
+                return {
+                    value: value,
+                    display_text: attributeDetail?.unit? `${value} ${attributeDetail?.unit}`: value,
+                };
+            });
+
+            return {
+                name: attribute_name,
+                display_text: attributeDetail?.displayName || attribute_name,
+                unit: attributeDetail?.unit || '',
+                values: values,
+            };
+        });
+        return variants;
+    }
+
+    async getExternalProductMetadata(externalProductId: number): Promise<ExternalProductMetadata[] | undefined> {
+        const { rows } = await knex.raw(`
+            select 
+                parsed_metadata || manual_metadata as metadata 
+            from external_products ep 
+            where 
+                ep.id = ?;
+        `, [externalProductId]);
+
+        if (rows.length === 0) {
+            return;
+        }
+
+        const metadata = rows[0]?.metadata;
+        const metadataFormatted = Object.keys(metadata).map((key) => {
+            const definition = MetadataDefinitions[key as MetadataKey];
+            const unit = definition?.unit || '';
+            let valueDisplayText = metadata[key];
+            if (unit) {
+                valueDisplayText = `${metadata[key]} ${unit}`;
+            }
+            if (definition?.dataType === 'boolean') {
+                valueDisplayText = metadata[key] ? '✅' : '❌';
+            }
+
+            return {
+                name: key,
+                value: metadata[key],
+                unit: definition?.unit ?? '',
+                name_display_text: definition?.displayName || key,
+                value_display_text: valueDisplayText,
+            };
+        });
+        return metadataFormatted;
     }
 }

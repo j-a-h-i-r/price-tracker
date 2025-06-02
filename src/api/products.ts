@@ -42,6 +42,11 @@ const PriceTrackBodySchema = z.object({
 });
 type PriceTrackBody = z.infer<typeof PriceTrackBodySchema>;
 
+const ProductVariantQuerySchema = z.object({
+    variants: z.record(z.string(), z.any()).optional(),
+});
+type ProductVariantQuery = z.infer<typeof ProductVariantQuerySchema>;
+
 export default async function routes(fastify: FastifyInstance) {
     fastify.get('/', async (req: FastifyRequest<{Querystring: ProductQuery}>) => {
         const parsedQuery = ProductQuerySchema.parse(req.query);
@@ -84,6 +89,11 @@ export default async function routes(fastify: FastifyInstance) {
             logger.error(error, 'Failed to update product');
             return res.code(500).send(false);
         }
+    });
+
+    fastify.get('/:id/variantattributes', async (req: FastifyRequest<{Params: IdParam}>) => {
+        const { id } = IdParam.parse(req.params);
+        return new ProductService().getVariantAttributesForProduct(id);
     });
 
     fastify.post('/:id/track', async (req: FastifyRequest<{Params: IdParam, Body: PriceTrackBody}>, res) => {
@@ -280,14 +290,20 @@ export default async function routes(fastify: FastifyInstance) {
     // );
 
     // Get all external products for a specific internal product
-    fastify.get('/:id/externals', async (req: FastifyRequest<{Params: IdParam}>) => {
+    fastify.get('/:id/externals', async (req: FastifyRequest<{Params: IdParam, Querystring: ProductVariantQuery}>) => {
         const { id } = IdParam.parse(req.params);
-        return new ProductService().getExternalProductsByInternalProductId(id);
+        const query = ProductVariantQuerySchema.parse(req.query);
+        return new ProductService().getExternalProductsByInternalProductId(id, query.variants);
     });
 
     // Get all prices for a specific external product
     fastify.get('/:id/externals/:externalid/prices', async (req: FastifyRequest<{Params: ExternalIdParam}>) => {
         const { externalid } = ExternalIdParam.parse(req.params);
         return new ProductService().getExternalProductPrices(externalid);
+    });
+
+    fastify.get('/:id/externals/:externalid/metadata', async (req: FastifyRequest<{Params: ExternalIdParam}>) => {
+        const { externalid } = ExternalIdParam.parse(req.params);
+        return new ProductService().getExternalProductMetadata(externalid);
     });
 }
