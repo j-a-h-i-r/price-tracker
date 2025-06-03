@@ -23,6 +23,7 @@ export default async function routes(fastify: FastifyInstance) {
 
     // Add hook to protect non-GET routes
     fastify.addHook('onRequest', async (request) => {
+        request.log.info({ method: request.method, url: request.url }, `[${request.id}] Incoming request - ${request.url}`);
         request.isAdmin = false;
         const authToken = request.cookies?.auth;
         if (authToken && jwt.verify(authToken, config.jwtSecret)) {
@@ -34,6 +35,10 @@ export default async function routes(fastify: FastifyInstance) {
         if (token === config.adminToken) {
             request.isAdmin = true;
         }
+    });
+
+    fastify.addHook('onResponse', async (request, reply) => {
+        request.log.info({ url: request.url, statusCode: reply.statusCode }, `[${request.id}] [${reply.statusCode}] [${reply.elapsedTime}ms] request completed - ${request.url}`);
     });
 
     fastify.setErrorHandler((error, request, reply) => {

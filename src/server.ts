@@ -10,6 +10,7 @@ export async function setupServer() {
         {
             loggerInstance: logger,
             querystringParser: (str) => qs.parse(str),
+            disableRequestLogging: true,
         }
     );
 
