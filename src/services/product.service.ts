@@ -110,8 +110,6 @@ export class ProductService {
             SELECT 
                 ip.name,
                 ip.category_id,
-                ip.raw_metadata,
-                ip.parsed_metadata || ip.manual_metadata as parsed_metadata,
                 ip.id,
                 (
                     SELECT
