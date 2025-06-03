@@ -526,32 +526,26 @@ export class ProductService {
     }
 
     /**
-     * Merge productIdsToMerge into productId. 
+     * Merge productIdsToMerge into productId. After successful operation,
+     * `internalProductIdsToMerge` will no longer exist in the database.
      */
     async mergeProducts(internalProductId: number, internalProductIdsToMerge: number[]): Promise<void> {
-        // 1 - Update all external products to point to the new productId
-        // 2 - Remove the internal products that are being merged
-
         await knex.transaction(async (trx) => {
+            // Since `internalProductIdsToMerge` will not exist, first pointing 
+            // all external products associated with these internal products to the
+            // `internalProductId` that we are merging into.
             await trx('external_products')
                 .whereIn('internal_product_id', internalProductIdsToMerge)
                 .update({
                     internal_product_id: internalProductId,
                 });
 
-            // Merge the parsed_metadata from the products being merged
-            // into the main product
-            await trx.raw(`
-                update internal_products ip1
-                set parsed_metadata = ip1.parsed_metadata || (
-	                select jsonb_object_agg(key, value)
-                    from internal_products ip2,
-                    jsonb_each(ip2.parsed_metadata) where ip2.id in (??)
-                )
-                where ip1.id = ?;
-            `, [internalProductIdsToMerge, internalProductId]
-            );
-
+            // Doing the same for the tracked products
+            await trx('tracked_products')
+                .whereIn('internal_product_id', internalProductIdsToMerge)
+                .update({
+                    internal_product_id: internalProductId,
+                });
 
             await trx('internal_products')
                 .whereIn('id', internalProductIdsToMerge)
