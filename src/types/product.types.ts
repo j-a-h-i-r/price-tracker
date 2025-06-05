@@ -61,15 +61,13 @@ export interface InternalProductLatestPrice {
     name: string,
     category_id: number,
     manufacturer_id: number,
-    raw_metadata: Record<string, string>,
-    parsed_metadata: Record<string, string>,
     created_at: string,
     updated_at: string,
     prices: LastestPrice[],
 }
 
 export interface InternalProductLastestPriceWithLowstAvailablePrice extends InternalProductLatestPrice {
-    lowest_available_price: LastestPrice
+    lowest_available_price: number,
 }
 
 export interface InternalProductWithPrice extends InternalProduct {

@@ -53,6 +53,13 @@ export class ScrapedProductsProcessor extends Writable {
     private async postProcessScrapedProducts() {
         // Scraping session is done.
 
+        try {
+            logger.info('Refreshing latest prices materialized view');
+            this.productService.refreshLatestPricesMaterializedView();
+        } catch (error) {
+            logger.error(error, 'Failed to refresh latest prices materialized view');
+        }
+
         // First let's sync the manufacturers. We stored the external manufacturers for
         // each batch. Now we'll sync all the new manufacturers with the internal manufacturers
         // and associate the external manufacturers with the internal manufacturers

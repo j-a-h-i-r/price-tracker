@@ -13,10 +13,11 @@ interface PriceQuery {
 
 const StringFilter = z.string();
 type StringFilter = z.infer<typeof StringFilter>;
-const NumericFilter = z.union([
+export const NumericFilter = z.union([
     z.string().transform(Number),
     z.record(z.enum(['eq', 'gt', 'lt']), z.string().transform(Number))
 ]);
+export type NumericFilter = z.infer<typeof NumericFilter>;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const BooleanFilter = z.boolean();
 

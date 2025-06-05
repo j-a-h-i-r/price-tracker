@@ -1,13 +1,41 @@
-import { ProductQuery } from '../api/products.js';
+import { NumericFilter, ProductQuery } from '../api/products.js';
 import { Category } from '../constants.js';
 import { knex } from '../core/db.js';
 import logger from '../core/logger.js';
-import { ExternalManufacturer, ExternalProduct, ExternalProductAPI, ExternalProductPrice, InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice, InternalProductLatestPrice, InternalProductWebsites, InternalProductWithPrice, Manufacturer, PossibleProductMatch, ExternalProductRawMetadata, ProductWithExternalId, ProductWithExternalIdAndManufacturer, ProductWithManufacturerId, TrackedProductBelowPrice, ProductVariant, ExternalProductMetadata } from '../types/product.types.js';
+import {
+    ExternalManufacturer, ExternalProduct, ExternalProductAPI, ExternalProductPrice,
+    InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice,
+    InternalProductWebsites, InternalProductWithPrice, Manufacturer, PossibleProductMatch,
+    ExternalProductRawMetadata, ProductWithExternalId, ProductWithExternalIdAndManufacturer,
+    ProductWithManufacturerId, TrackedProductBelowPrice, ProductVariant, ExternalProductMetadata
+} from '../types/product.types.js';
 import { MetadataDefinitions, MetadataKey, metadataParsers } from './metadata.service.js';
 import { getUserByEmail } from './user.service.js';
 import { VariantAttributes } from './variant.service.js';
 
 export class ProductService {
+    convertNumericFilterToSqlConditions(filter: NumericFilter): ['=' | '>' | '<', number][] {
+        const conditions: ['=' | '>' | '<', number][] = [];
+        if (filter) {
+            if (typeof filter === 'number') {
+                conditions.push(['=', filter]);
+            } else if (typeof filter === 'object') {
+                if (filter.eq) {
+                    conditions.push(['=', filter.eq]);
+                } else {
+                    if (filter.gt) {
+                        conditions.push(['>', filter.gt]);
+                    }
+                    
+                    if (filter.lt) {
+                        conditions.push(['<', filter.lt]);
+                    }
+                } 
+            }
+        }
+        return conditions;
+    }
+
     async getInternalProducts(filter: ProductQuery = {}): Promise<InternalProductLastestPriceWithLowstAvailablePrice[]> {
         // If the name is a URL, we'll first try to directly fetch the product
         // by the URL
@@ -23,76 +51,55 @@ export class ProductService {
             }
         }
 
-        let query = knex<InternalProductLatestPrice>('internal_products_latest_price as iplp')
+        let query = knex<InternalProductLastestPriceWithLowstAvailablePrice>
+            ('internal_products as ip')
+            .innerJoin(
+                'external_products_latest_price as eplp',
+                'ip.id',
+                'eplp.internal_product_id'
+            )
+            .groupBy('ip.id')
             .select(
-                'iplp.id',
-                'iplp.name',
-                'iplp.category_id',
-                'iplp.manufacturer_id',
-                'iplp.raw_metadata',
-                // Override the parsed metadata if it was manually set
-                knex.raw('iplp.parsed_metadata || iplp.manual_metadata as parsed_metadata'),
-                'iplp.created_at',
-                'iplp.updated_at',
-                'iplp.prices',
+                'ip.id',
+                'ip.name',
+                'ip.category_id',
+                'ip.manufacturer_id',
+                'ip.created_at',
+                'ip.updated_at',
+                knex.raw('min(eplp.price) filter (where eplp.is_available = True) as lowest_available_price'),
+                knex.raw(`
+                    json_agg(
+                        jsonb_build_object(
+                            'website_id', eplp.website_id,
+                            'price', eplp.price,
+                            'is_available', eplp.is_available,
+                            'created_at', eplp.created_at
+                        )
+                    )::jsonb as prices`
+                )
             );
 
         if (internalProductId) {
-            query = query.where('iplp.id', internalProductId);
+            query = query.where('ip.id', internalProductId);
             return query;
         }
 
         if (filter.name) {
-            query = query.where('iplp.name', 'ILIKE', `%${filter.name}%`);
+            // TODO: Use full-text search or some fuzzy matching
+            query = query.where('ip.name', 'ILIKE', `%${filter.name}%`);
         }
         if (filter.price) {
-            let op, value;
-            if (filter.price instanceof Number) {
-                op = '=';
-                value = filter.price;
-            } else if (typeof filter.price === 'object') {
-                if (filter.price.eq) {
-                    op = '=';
-                    value = filter.price.eq;
-                } else if (filter.price.gt) {
-                    op = '>';
-                    value = filter.price.gt;
-                } else if (filter.price.lt) {
-                    op = '<';
-                    value = filter.price.lt;
-                }
-            }
-            if (op && value) {
-                query = query.whereRaw(`iplp.prices @@ '$[*].price ${op} ${value}'`);
-            }
+            const priceConditions = this.convertNumericFilterToSqlConditions(filter.price);
+            priceConditions.forEach(([op, value]) => {
+                query = query.andWhere('eplp.price', op, value);
+            });
         }
 
         if (filter.limit) {
             query = query.limit(filter.limit);
         }
 
-        const products: InternalProductLatestPrice[] = await query;
-
-        // Now I want to add the `lowest_available_price` field to the products
-        // This is current available lowest price across all websites for the product
-
-        const productsWithLowestPrice = products.map((product) => {
-            const prices = product.prices;
-            const latestAvailablePrice = prices.reduce((acc, price) => {
-                if (price.is_available) {
-                    if (!acc || acc.price === null || price.price < acc.price) {
-                        acc = price;
-                    }
-                }
-                return acc;
-            });
-            return {
-                ...product,
-                lowest_available_price: latestAvailablePrice,
-            };
-        });
-
-        return productsWithLowestPrice;
+        return query;
     }
 
     async getInternalProductById(id: number): Promise<InternalProduct | undefined> {
@@ -809,5 +816,12 @@ export class ProductService {
             };
         });
         return metadataFormatted;
+    }
+
+    /**
+     * Refresh the latest prices materialized view.
+     */
+    async refreshLatestPricesMaterializedView(): Promise<void> {
+        await knex.raw('REFRESH MATERIALIZED VIEW CONCURRENTLY external_products_latest_price;');
     }
 }
