@@ -38,7 +38,7 @@ function start() {
 export function startScraping() {
     return new Promise<void>((resolve, reject) => {
 
-        const scrapedProductsStream = createBatchedProductStream();
+        const scrapedProductsStream = createBatchedProductStream(1000);
         pipeline(scrapedProductsStream, new ScrapedProductsProcessor(), (err) => {
             if (err) {
                 logger.error(err, 'Error in pipeline');
