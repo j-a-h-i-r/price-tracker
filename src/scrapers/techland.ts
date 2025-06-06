@@ -7,6 +7,14 @@ import { ProductJob } from '../types/product.types.js';
 import { getCategoryId } from '../constants.js';
 
 export class Techland extends BaseScraper {
+    getWebsite(): Website {
+        return {
+            website_id: 2,
+            name: 'Techland',
+            url: 'https://www.techlandbd.com',
+        };
+    }
+
     readonly categories: CategoryLink[] = [
         { category: 'Laptop', url: 'https://www.techlandbd.com/brand-laptops' },
         { category: 'Processor', url: 'https://www.techlandbd.com/pc-components/processor' },
@@ -53,7 +61,7 @@ export class Techland extends BaseScraper {
             this.emitScrapeMetric(
                 categoryName,
                 categoryProductLinks.length,
-                TechlandWebsite.name
+                this.getWebsite().name
             );
         }
 
@@ -66,7 +74,7 @@ export class Techland extends BaseScraper {
                 const productJob = {
                     ...product,
                     category_id: getCategoryId(category.category),
-                    website_id: TechlandWebsite.website_id,
+                    website_id: this.getWebsite().website_id,
                 };
                 yield productJob;
             } catch (error) {
@@ -138,9 +146,3 @@ export class Techland extends BaseScraper {
         };
     }
 }
-
-export const TechlandWebsite: Website = {
-    website_id: 2,
-    name: 'Techland',
-    url: 'https://www.techlandbd.com',
-};

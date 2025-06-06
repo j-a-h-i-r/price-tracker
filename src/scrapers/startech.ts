@@ -6,6 +6,14 @@ import { categoriesMap } from '../constants.js';
 import { ProductJob } from '../types/product.types.js';
 
 export class StarTech extends BaseScraper {
+    getWebsite(): Website {
+        return {
+            website_id: 1,
+            name: 'StarTech',
+            url: 'https://www.startech.com.bd',
+        };
+    }
+
     readonly categories: CategoryLink[] = [
         { category: 'Laptop', url: 'https://www.startech.com.bd/laptop-notebook', },
         { category: 'Monitor', url: 'https://www.startech.com.bd/monitor', },
@@ -52,7 +60,7 @@ export class StarTech extends BaseScraper {
             this.emitScrapeMetric(
                 categoryName,
                 categoryProductLinks.length,
-                StartTechWebsite.name,
+                this.getWebsite().name,
             );
         }
 
@@ -64,7 +72,7 @@ export class StarTech extends BaseScraper {
                 const productJob = {
                     ...product,
                     category_id: categoriesMap[category.category],
-                    website_id: StartTechWebsite.website_id,
+                    website_id: this.getWebsite().website_id,
                 };
                 yield productJob;
             } catch (error) {
@@ -145,9 +153,3 @@ export class StarTech extends BaseScraper {
         return specifications;
     }
 }
-
-export const StartTechWebsite: Website = {
-    website_id: 1,
-    name: 'StarTech',
-    url: 'https://www.startech.com.bd',
-};

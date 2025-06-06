@@ -1,15 +1,14 @@
-import { StarTech, StartTechWebsite } from './startech.js';
-import { Techland, TechlandWebsite } from './techland.js';
+import { BaseScraper } from './base-scraper.js';
+import { Website } from './scraper.types.js';
+import { StarTech, } from './startech.js';
+import { Techland, } from './techland.js';
 
-export const scrapers = [
-    {
-        website: StartTechWebsite,
-        scraper: new StarTech(),
-    },
-    {
-        website: TechlandWebsite,
-        scraper: new Techland(),
-    }
-];
+const scraperInstances = [new StarTech(), new Techland()];
+
+export const scrapers: {website: Website, scraper: BaseScraper}[] = scraperInstances
+    .map(scraper => ({
+        website: scraper.getWebsite(),
+        scraper,
+    }));
 
 export * from './scraper.types.js';

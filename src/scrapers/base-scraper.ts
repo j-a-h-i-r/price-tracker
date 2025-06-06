@@ -3,6 +3,7 @@ import pThrottle from 'p-throttle';
 import { request } from 'undici';
 import { ProductJob } from '../types/product.types.js';
 import { scrapedWebsiteCategoryGauge } from '../monitoring/metrics.js';
+import { Website } from './scraper.types.js';
 
 export interface CategoryLink {
     category: CategoryName;
@@ -15,6 +16,8 @@ export interface ProductLink {
 }
 
 export abstract class BaseScraper {
+    abstract getWebsite(): Website;
+    
     protected abstract readonly categories: CategoryLink[];
 
     protected readonly throttle = pThrottle({
