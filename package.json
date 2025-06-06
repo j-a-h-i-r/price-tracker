@@ -18,6 +18,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "dev": "cross-env NODE_ENV=development nodemon src/index.ts",
+    "fakeweb": "cross-env NODE_ENV=development nodemon src/fake-website-server.ts",
     "start:debug": "tsnd --inspect --respawn --transpile-only src/index.ts",
     "clean": "rimraf dist/",
     "compile": "tsc",
