@@ -138,15 +138,19 @@ const WeightParser: MetadataParser = {
         if (!weight) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
         }
-        const groups = /\b(?<weight_amount>\d+)\s*(?<unit>kg|g)\b/i.exec(weight)?.groups;
+        const groups = /\b(?<weight_amount>\d+(?:\.\d+)?)\s*(?<unit>kg|gm|lbs|lb|g)\b/i.exec(weight)?.groups;
         if (!groups) {
             return { hasMetadata: true, parseSuccess: false, parsedMetadata: weight };
         }
         const { weight_amount, unit } = groups;
         let weightAmountNumeric = Number(weight_amount);
-        if (unit.toLowerCase() === 'kg') {
+        const unitLower = unit.toLowerCase();
+        if (unitLower === 'kg') {
             weightAmountNumeric = weightAmountNumeric * 1000;
+        } else if (unitLower === 'lbs' || unitLower === 'lb') {
+            weightAmountNumeric = weightAmountNumeric * 453.592; // Convert lbs to grams
         }
+
         return {
             hasMetadata: true,
             parseSuccess: true,
