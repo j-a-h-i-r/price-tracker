@@ -1,11 +1,18 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ProductService } from '../services/product.service.js';
+import { z } from 'zod';
 
-export default async function statsRoutes(fastify: FastifyInstance) {
-    fastify.get('/', async (req, res) => {
+const AllQuery = z.object({
+    min_score: z.number({coerce: true}).min(0).max(1).default(0.6),
+});
+type AllQuery = z.infer<typeof AllQuery>;
+
+export default async function potentialSimilarRoutes(fastify: FastifyInstance) {
+    fastify.get('/', async (req: FastifyRequest<{Querystring: AllQuery}>, res) => {
         if (!req.isAdmin) {
             return res.status(403).send({ message: 'You are not authorized to access this resource' });
         }
-        return new ProductService().getPossibleSimilarProducts();
+        const { min_score } = AllQuery.parse(req.query);
+        return new ProductService().getPossibleSimilarProducts({minScore: min_score});
     });
 }

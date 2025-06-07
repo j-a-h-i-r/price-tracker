@@ -567,7 +567,7 @@ export class ProductService {
             .whereIn('internal_product_2_id', internalProductIdsToIgnore);
     }
 
-    async getPossibleSimilarProducts(): Promise<PossibleProductMatch[]> {
+    async getPossibleSimilarProducts({ minScore = 0.7 }: { minScore: number }): Promise<PossibleProductMatch[]> {
         const { rows } = await knex.raw(`
             select
             internal_product_1_id as product_id,
@@ -580,9 +580,10 @@ export class ProductService {
             inner join internal_products ip1 on ip1.id = sip.internal_product_1_id
             inner join internal_products ip2 on ip2.id = sip.internal_product_2_id
             where sip.marked_different is false
+                and sip.similarity_score >= ?
             group by internal_product_1_id, ip1."name" 
             order by max(similarity_score) desc;
-        `);
+        `, [minScore]);
         return rows;
     }
 
