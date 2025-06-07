@@ -124,7 +124,12 @@ export class Techland extends BaseScraper {
             productInfo[key] = value;
         });
 
-        const price = productInfo['special price']?.replace(',', '').replace('৳', '');
+        const specialPrice = productInfo['special price']?.replace(',', '').replace('৳', '');
+        const regularPrice = productInfo['product price']?.replace(',', '').replace('৳', '');
+
+        const price = specialPrice ? Number(specialPrice) 
+            : (regularPrice ? Number(regularPrice) : null);
+
         const availability = productInfo['Stock Status'] === 'In Stock';
         const brand = productInfo['Brand'] ?? '';
 
@@ -137,7 +142,7 @@ export class Techland extends BaseScraper {
         });
         return {
             name: $('#product > table > caption > div > h1').text().trim(),
-            price: price ? Number(price) : null,
+            price: price,
             isAvailable: availability,
             url: pageUrl,
             slug: pageUrl.split('/').pop() ?? '',
