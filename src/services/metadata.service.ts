@@ -81,13 +81,17 @@ export const MetadataDefinitions: Record<MetadataKey, MetadataProperty> ={
 const RAMParser: MetadataParser = {
     metadataKey: 'ram',
     parse(metadata: Record<string, string>): ParserOutput {
-        const { RAM } = metadata;
-        if (!RAM) {
+        const { RAM, 'Memory Size': memorySize } = metadata;
+        if (!RAM || !memorySize) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
         }
-        const groups = /(?<ram_amount>\d+)\s*(?<ram_unit>GB|MB)/i.exec(RAM)?.groups;
+
+        const ramText = RAM || memorySize;
+
+
+        const groups = /(?<ram_amount>\d+)\s*(?<ram_unit>GB|MB)/i.exec(ramText)?.groups;
         if (!groups) {
-            return { hasMetadata: true, parseSuccess: false, parsedMetadata: RAM };
+            return { hasMetadata: true, parseSuccess: false, parsedMetadata: ramText };
         }
         const { ram_amount, ram_unit } = groups;
         let ramAmountNumeric = Number(ram_amount);
