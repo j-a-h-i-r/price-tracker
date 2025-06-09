@@ -2,7 +2,6 @@ import { type ExternalManufacturer, type ProductJob } from '../types/product.typ
 import { ProductService } from './product.service.ts';
 import logger from '../core/logger.ts';
 import { Writable } from 'stream';
-import { sendEmailForTrackedProducts } from './pricetrack.service.ts';
 import { cache } from '../core/cache.ts';
 
 export class ScrapedProductsProcessor extends Writable {
@@ -100,12 +99,6 @@ export class ScrapedProductsProcessor extends Writable {
         } catch (error) {
             logger.error(error, 'Failed to invalidate cache for products');
         }
-
-        setTimeout(() => {
-            logger.info('Finished processing all products. Checkign for tracked products');
-            sendEmailForTrackedProducts();
-        }
-        , 1000);
     }
 
     /**

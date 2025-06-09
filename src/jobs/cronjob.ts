@@ -1,34 +1,38 @@
 import { spawn } from 'child_process';
 import logger from '../core/logger.ts';
 
-interface CronJobProps {
+interface JobProps {
     name: string;
-    schedule: string;
     task?: () => Promise<void>;
     jobFile?: string; // Optional job file path
 }
 
-export class CronJob implements CronJobProps {
+export class Job {
     readonly name: string;
-    readonly schedule: string;
     task?: () => Promise<void>;
     jobFile?: string;
 
-    constructor(job: CronJobProps) {
+    constructor(job: JobProps) {
         this.name = job.name;
-        this.schedule = job.schedule;
-        this.task = job.task;
-        this.jobFile = job.jobFile;
+
+        if (job.task && job.jobFile) {
+            throw new Error(`Job [${this.name}] cannot have both a task and a job file specified.`);
+        }
+
+        if (job.task) {
+            this.task = job.task;
+        } else {
+            this.jobFile = job.jobFile;
+        }
     }
 
     #runJobInProcess() {
         return new Promise<void>((resolve, reject) => {
             if (!this.jobFile) {
-                logger.error(`Job ${this.name} does not have a job file specified.`);
                 return reject(new Error(`Job ${this.name} does not have a job file specified.`));
             }
-            logger.info(`Running job ${this.name} from file: ${this.jobFile} in new process`);
             
+            logger.info(`Running job ${this.name} from file: ${this.jobFile} in new process`);
             const sub = spawn('node', ['--experimental-strip-types', this.jobFile], {
                 stdio: 'inherit',
                 detached: false,
@@ -54,9 +58,25 @@ export class CronJob implements CronJobProps {
         } else if (this.jobFile) {
             return this.#runJobInProcess();
         } else {
-            logger.error(`No task or job file specified for job ${this.name}`);
             return Promise.reject(new Error(`No task or job file specified for job ${this.name}`));
         }
     }
+}
 
+interface CronJobProps extends JobProps {
+    schedule: string;
+    successors?: Job[]; // Optional successors for the job
+}
+
+export class CronJob extends Job {
+    readonly schedule: string;
+    readonly successors: Job[] = [];
+
+    constructor(job: CronJobProps) {
+        super(job);
+        this.schedule = job.schedule;
+        if (Array.isArray(job.successors)) {
+            this.successors = job.successors;
+        }
+    }
 }

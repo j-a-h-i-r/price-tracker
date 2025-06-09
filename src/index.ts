@@ -3,6 +3,7 @@ import { setupServer } from './server.ts';
 import logger from './core/logger.ts';
 import config from './core/config.ts';
 import { setupEverything } from './setup.ts';
+// import { ScrapingJob } from './jobs/index.ts';
 
 try {
     const { jobManager, otlpSdk } = await setupEverything();
@@ -14,6 +15,7 @@ try {
     if (!config.isProduction) {
         // Development specific setup
         // jobManager.scheduleJobs();
+        // new ScrapingJob().run();
     }
     
     otlpSdk.start();
