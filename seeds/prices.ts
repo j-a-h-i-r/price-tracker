@@ -1,6 +1,6 @@
-import { Knex } from 'knex';
-import { categories } from '../src/constants.js';
-import { scrapers } from '../src/scrapers/index.js';
+import { type Knex } from 'knex';
+import { categories } from '../src/constants.ts';
+import { scrapers } from '../src/scrapers/index.ts';
 
 const websites = scrapers.map(({ website }) => ({
     id: website.website_id,

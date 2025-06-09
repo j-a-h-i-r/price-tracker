@@ -26,10 +26,11 @@
     "build": "npm-run-all clean compile copy-files",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "migrate": "cross-env NODE_OPTIONS='--loader ts-node/esm' knex migrate:latest --esm",
+    "migrate": "cross-env NODE_ENV=development node --experimental-strip-types knex_migrate.ts",
+    "seed": "cross-env NODE_ENV=development node --experimental-strip-types knex_seed.ts",
     "db:prod": "npm run migrate:prod && npm run seed:prod",
-    "migrate:prod": "knex --cwd dist --env production migrate:latest",
-    "seed:prod": "knex --cwd dist --env production seed:run"
+    "migrate:prod": "cross-env NODE_ENV=production node --experimental-strip-types knex_migrate.ts",
+    "seed:prod": "cross-env NODE_ENV=production node --experimental-strip-types knex_seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -47,8 +48,6 @@
     "eslint": "^9.23.0",
     "npm-run-all": "^4.1.5",
     "rimraf": "^3.0.2",
-    "ts-node": "^10.4.0",
-    "ts-node-dev": "^1.1.8",
     "typescript": "^5.8.3",
     "vitest": "^3.1.3"
   },

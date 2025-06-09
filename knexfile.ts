@@ -31,7 +31,7 @@ export default{
       max: 25
     },
     migrations: {
-      extension: 'js',
+      extension: 'ts',
     }
   }
 };
