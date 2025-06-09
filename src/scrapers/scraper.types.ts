@@ -1,4 +1,4 @@
-import { CategoryName } from '../constants.js';
+import { type CategoryName } from '../constants.ts';
 
 export interface ScrapedProduct {
     name: string

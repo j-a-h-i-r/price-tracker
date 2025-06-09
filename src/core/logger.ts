@@ -1,5 +1,5 @@
 import pino from 'pino';
-import config from './config.js';
+import config from './config.ts';
 
 const DEFAULT_LOG_LEVEL = config.isProduction ? 'info' : 'debug';
 const LOG_LEVEL = process.env.LOG_LEVEL || DEFAULT_LOG_LEVEL;

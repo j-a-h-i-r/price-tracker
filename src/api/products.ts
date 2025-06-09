@@ -1,9 +1,9 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { ProductService } from '../services/product.service.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { ProductService } from '../services/product.service.ts';
 import { z } from 'zod';
-import { ExternalIdParam, IdParam } from './types.js';
-import logger from '../core/logger.js';
-import { cache } from '../core/cache.js';
+import { ExternalIdParam, IdParam } from './types.ts';
+import logger from '../core/logger.ts';
+import { cache } from '../core/cache.ts';
 
 interface PriceQuery {
     from?: string;

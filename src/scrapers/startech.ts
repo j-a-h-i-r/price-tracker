@@ -1,9 +1,9 @@
 import * as cheerio from 'cheerio';
-import { BaseScraper, CategoryLink, ProductLink } from './base-scraper.js';
-import { ScrapedProduct, Website } from './scraper.types.js';
-import logger from '../core/logger.js';
-import { categoriesMap } from '../constants.js';
-import { ProductJob } from '../types/product.types.js';
+import { BaseScraper, type CategoryLink, type ProductLink } from './base-scraper.ts';
+import { type ScrapedProduct, type Website } from './scraper.types.ts';
+import logger from '../core/logger.ts';
+import { categoriesMap } from '../constants.ts';
+import { type ProductJob } from '../types/product.types.ts';
 
 export class StarTech extends BaseScraper {
     getWebsite(): Website {

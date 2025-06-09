@@ -1,5 +1,5 @@
-import { ScrapedProduct } from '../scrapers/scraper.types.js';
-import { ParsedMetadata } from '../services/metadata.service.js';
+import { type ScrapedProduct } from '../scrapers/scraper.types.ts';
+import { type ParsedMetadata } from '../services/metadata.service.ts';
 
 // The product object passed around in the message queue
 export interface ProductJob extends ScrapedProduct {

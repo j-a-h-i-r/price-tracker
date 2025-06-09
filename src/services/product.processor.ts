@@ -1,9 +1,9 @@
-import { ExternalManufacturer, ProductJob } from '../types/product.types.js';
-import { ProductService } from './product.service.js';
-import logger from '../core/logger.js';
+import { type ExternalManufacturer, type ProductJob } from '../types/product.types.ts';
+import { ProductService } from './product.service.ts';
+import logger from '../core/logger.ts';
 import { Writable } from 'stream';
-import { sendEmailForTrackedProducts } from './pricetrack.service.js';
-import { cache } from '../core/cache.js';
+import { sendEmailForTrackedProducts } from './pricetrack.service.ts';
+import { cache } from '../core/cache.ts';
 
 export class ScrapedProductsProcessor extends Writable {
     private readonly productService: ProductService;

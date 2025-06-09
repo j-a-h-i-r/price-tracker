@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DedupeStream } from './dedupestream.js';
+import { DedupeStream } from './dedupestream.ts';
 
 describe('DedupeStream', () => {
     it('should dedupe items based on unique attribute', async () => {

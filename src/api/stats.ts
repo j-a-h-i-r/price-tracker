@@ -1,7 +1,7 @@
-import { FastifyInstance } from 'fastify';
-import { ProductService } from '../services/product.service.js';
-import { getWebsiteCount } from '../services/website.service.js';
-import { getCategoryCount } from '../services/category.service.js';
+import type { FastifyInstance } from 'fastify';
+import { ProductService } from '../services/product.service.ts';
+import { getWebsiteCount } from '../services/website.service.ts';
+import { getCategoryCount } from '../services/category.service.ts';
 
 export default async function statsRoutes(fastify: FastifyInstance) {
     fastify.get('/', async () => {

@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { getManufacturerStats, listInternalManufacturers, mergeManufacturers } from '../services/manufacturers.service.js';
-import { IdParam } from './types.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { getManufacturerStats, listInternalManufacturers, mergeManufacturers } from '../services/manufacturers.service.ts';
+import { IdParam } from './types.ts';
 import { z } from 'zod';
 
 const MergeIdParam = z.object({

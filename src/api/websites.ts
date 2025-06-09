@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { scrapers } from '../scrapers/index.js';
-import { knex } from '../core/db.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { scrapers } from '../scrapers/index.ts';
+import { knex } from '../core/db.ts';
 
 export default async function routes(fastify: FastifyInstance) {
     fastify.get('/', async () => {

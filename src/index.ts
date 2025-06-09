@@ -1,56 +1,30 @@
 import 'dotenv/config'; // Load environment variables from .env file
-import { setupServer } from './server.js';
-import logger from './core/logger.js';
-import config from './core/config.js';
-import { setupEverything } from './setup.js';
-import { createBatchedProductStream } from './scrapers/scrape-runner.js';
-import { pipeline } from 'stream';
-import { ScrapedProductsProcessor } from './services/product.processor.js';
+import { setupServer } from './server.ts';
+import logger from './core/logger.ts';
+import config from './core/config.ts';
+import { setupEverything } from './setup.ts';
 
-function start() {
+try {
+    const { jobManager, otlpSdk } = await setupEverything();
     if (config.isProduction) {
-        setupEverything()
-            .then(({ task, otlpSdk }) => {
-                otlpSdk.start();
-                task.start();
-                logger.info('Setup completed');
-            })
-            .catch((error) => {
-                logger.error(error, 'Failed to setup everything');
-            });
-    } else {
-        setupEverything()
-            .then(async ({otlpSdk}) => {
-                otlpSdk.start();
-                // await startScraping();
-                logger.info('Scraper triggered once');
-            })
-            .catch((error) => {
-                logger.error(error, 'Failed setup');
-            });
+        // Only need to schedule in production
+        jobManager.scheduleJobs();
     }
 
-    setupServer()
-        .then(() => logger.info('Server running'))
-        .catch(() => logger.error('Failed to run server'));
+    if (!config.isProduction) {
+        // Development specific setup
+        // jobManager.scheduleJobs();
+    }
+    
+    otlpSdk.start();
+    logger.info('Setup completed');
+} catch (error) {
+    logger.error(error, 'Failed to setup everything');
 }
 
-export function startScraping() {
-    return new Promise<void>((resolve, reject) => {
-
-        const scrapedProductsStream = createBatchedProductStream(1000);
-        pipeline(scrapedProductsStream, new ScrapedProductsProcessor(), (err) => {
-            if (err) {
-                logger.error(err, 'Error in pipeline');
-                reject(err);
-            } else {
-                logger.info('Pipeline completed successfully');
-                resolve();
-            }
-        });
-    });
+try {
+    await setupServer();
+    logger.info('Server running');
+} catch (error) {
+    logger.error(error, 'Failed to run server');
 }
-
-start();
-
-export * from './types/product.types.js';

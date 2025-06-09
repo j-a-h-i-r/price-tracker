@@ -1,6 +1,6 @@
-import logger from '../core/logger.js';
-import { sendPriceTrackEmail } from './email.service.js';
-import { ProductService } from './product.service.js';
+import logger from '../core/logger.ts';
+import { sendPriceTrackEmail } from './email.service.ts';
+import { ProductService } from './product.service.ts';
 
 export async function sendEmailForTrackedProducts() {
     const eligibleProducts = await new ProductService().getTrackedProductsBelowTargetPrice();

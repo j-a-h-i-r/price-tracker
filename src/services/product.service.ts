@@ -1,17 +1,17 @@
-import { NumericFilter, ProductQuery } from '../api/products.js';
-import { Category } from '../constants.js';
-import { knex } from '../core/db.js';
-import logger from '../core/logger.js';
-import {
+import { NumericFilter, type ProductQuery } from '../api/products.ts';
+import { type Category } from '../constants.ts';
+import { knex } from '../core/db.ts';
+import logger from '../core/logger.ts';
+import type {
     ExternalManufacturer, ExternalProduct, ExternalProductAPI, ExternalProductPrice,
     InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice,
     InternalProductWebsites, InternalProductWithPrice, Manufacturer, PossibleProductMatch,
     ExternalProductRawMetadata, ProductWithExternalId, ProductWithExternalIdAndManufacturer,
     ProductWithManufacturerId, TrackedProductBelowPrice, ProductVariant, ExternalProductMetadata
-} from '../types/product.types.js';
-import { MetadataDefinitions, MetadataKey, metadataParsers } from './metadata.service.js';
-import { getUserByEmail } from './user.service.js';
-import { VariantAttributes } from './variant.service.js';
+} from '../types/product.types.ts';
+import { MetadataDefinitions, type MetadataKey, metadataParsers } from './metadata.service.ts';
+import { getUserByEmail } from './user.service.ts';
+import { VariantAttributes } from './variant.service.ts';
 
 export class ProductService {
     convertNumericFilterToSqlConditions(filter: NumericFilter): ['=' | '>' | '<', number][] {

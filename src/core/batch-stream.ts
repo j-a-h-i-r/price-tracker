@@ -1,4 +1,4 @@
-import { Transform, TransformCallback } from 'stream';
+import { Transform, type TransformCallback } from 'stream';
 
 /**
  * Utility stream that creates batches from another stream.

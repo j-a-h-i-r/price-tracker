@@ -1,5 +1,5 @@
-import { FastifyInstance } from 'fastify';
-import { listUsers } from '../services/user.service.js';
+import type { FastifyInstance } from 'fastify';
+import { listUsers } from '../services/user.service.ts';
 
 export default async function routes(fastify: FastifyInstance) {
     fastify.get('/', async (req, res) => {

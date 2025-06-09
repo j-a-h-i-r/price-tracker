@@ -1,4 +1,4 @@
-import { knex } from '../core/db.js';
+import { knex } from '../core/db.ts';
 
 export type MetadataDataType = 'string' | 'integer' | 'float' | 'boolean';
 

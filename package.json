@@ -6,19 +6,19 @@
   "exports": "./index.ts",
   "type": "module",
   "engines": {
-    "node": "20.11.0",
-    "npm": "10.2.4"
+    "node": ">=22.16.0 <23",
+    "npm": "~10.9.2"
   },
   "directories": {
     "test": "test"
   },
   "scripts": {
     "prestart": "npm run db:prod",
-    "start": "node dist/src/index.js",
+    "start": "node --experimental-strip-types src/index.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "dev": "cross-env NODE_ENV=development nodemon src/index.ts",
-    "fakeweb": "cross-env NODE_ENV=development nodemon src/fake-website-server.ts",
+    "dev": "cross-env NODE_ENV=development node --watch --watch-preserve-output --experimental-strip-types src/index.ts",
+    "fakeweb": "cross-env NODE_ENV=development node --watch --watch-preserve-output --experimental-strip-types src/fake-website-server.ts",
     "start:debug": "tsnd --inspect --respawn --transpile-only src/index.ts",
     "clean": "rimraf dist/",
     "compile": "tsc",
@@ -45,7 +45,6 @@
     "@typescript-eslint/parser": "^8.28.0",
     "copyfiles": "^2.4.1",
     "eslint": "^9.23.0",
-    "nodemon": "^3.1.9",
     "npm-run-all": "^4.1.5",
     "rimraf": "^3.0.2",
     "ts-node": "^10.4.0",

@@ -1,9 +1,9 @@
-import { CategoryName } from '../constants.js';
+import { type CategoryName } from '../constants.ts';
 import pThrottle from 'p-throttle';
 import { request } from 'undici';
-import { ProductJob } from '../types/product.types.js';
-import { scrapedWebsiteCategoryGauge } from '../monitoring/metrics.js';
-import { Website } from './scraper.types.js';
+import { type ProductJob } from '../types/product.types.ts';
+import { scrapedWebsiteCategoryGauge } from '../monitoring/metrics.ts';
+import { type Website } from './scraper.types.ts';
 
 export interface CategoryLink {
     category: CategoryName;

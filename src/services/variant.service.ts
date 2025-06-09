@@ -1,4 +1,4 @@
-import { MetadataDefinitions, MetadataKey, MetadataProperty } from './metadata.service.js';
+import { MetadataDefinitions, type MetadataKey, type MetadataProperty } from './metadata.service.ts';
 
 /**
  * This is like a wrapper on top of the metadata definitions.

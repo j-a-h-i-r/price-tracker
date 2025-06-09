@@ -1,10 +1,10 @@
 import { pipeline, Readable, Transform } from 'stream';
-import { scrapers } from './index.js';
+import { scrapers } from './index.ts';
 import mergeStreams from '@sindresorhus/merge-streams';
-import { BatchTransform } from '../core/batch-stream.js';
-import logger from '../core/logger.js';
-import { ProductJob } from '../types/product.types.js';
-import { DedupeStream } from '../core/dedupestream.js';
+import { BatchTransform } from '../core/batch-stream.ts';
+import logger from '../core/logger.ts';
+import { type ProductJob } from '../types/product.types.ts';
+import { DedupeStream } from '../core/dedupestream.ts';
 
 /**
  * Creates a stream of products from all scrapers.
