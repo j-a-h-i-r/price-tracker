@@ -1,7 +1,7 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { getAllDeals } from '../services/deal.service.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { getAllDeals } from '../services/deal.service.ts';
 import { z } from 'zod';
-import { cache } from '../core/cache.js';
+import { cache } from '../core/cache.ts';
 
 const DealsQuerySchema = z.object({
     days: z.coerce.number().max(30).default(7),

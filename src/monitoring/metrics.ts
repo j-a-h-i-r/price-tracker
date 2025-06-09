@@ -1,6 +1,6 @@
 import { ValueType } from '@opentelemetry/api';
-import constants from '../core/constants.js';
-import { metricProvider } from '../otlp.js';
+import constants from '../core/constants.ts';
+import { metricProvider } from '../otlp.ts';
 
 /**
  * Defines a list of metrics that are exported from the application

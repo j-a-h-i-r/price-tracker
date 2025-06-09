@@ -9,8 +9,8 @@ import {
 import FastifyOtelInstrumentation from '@fastify/otel';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
-import config from './core/config.js';
-import constants from './core/constants.js';
+import config from './core/config.ts';
+import constants from './core/constants.ts';
 import { HostMetrics } from '@opentelemetry/host-metrics';
 
 const SIGNOZ_ENDPOINT = config.signozEndpoint;

@@ -1,9 +1,9 @@
 import Fastify from 'fastify';
 import qs from 'qs';
-import routes from './api/index.js';
-import logger from './core/logger.js';
-import config from './core/config.js';
-import { fastifyOtelInstrumentation } from './otlp.js';
+import routes from './api/index.ts';
+import logger from './core/logger.ts';
+import config from './core/config.ts';
+import { fastifyOtelInstrumentation } from './otlp.ts';
 
 export async function setupServer() {
     const server = Fastify.default(

@@ -1,5 +1,5 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { knex } from '../core/db.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { knex } from '../core/db.ts';
 
 export default async function routes(fastify: FastifyInstance, options: any) {
     fastify.get('/', async (req, res) => {

@@ -1,5 +1,5 @@
-import { FastifyInstance } from 'fastify';
-import { ProductService } from '../services/product.service.js';
+import type { FastifyInstance } from 'fastify';
+import { ProductService } from '../services/product.service.ts';
 
 export default async function routes(fastify: FastifyInstance) {
     fastify.get('/products', async (req, res) => {

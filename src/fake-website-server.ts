@@ -1,5 +1,5 @@
 import { randomInt } from 'crypto';
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance } from 'fastify';
 
 const fastify: FastifyInstance = Fastify({
     logger: true

@@ -1,5 +1,5 @@
-import emailer from '../core/email.js';
-import { TrackedProductResult } from '../types/product.types.js';
+import emailer from '../core/email.ts';
+import { type TrackedProductResult } from '../types/product.types.ts';
 
 export async function sendAuthLinkEmail(email: string, authLink: string, expiryMinutes: number) {
     return emailer.send({

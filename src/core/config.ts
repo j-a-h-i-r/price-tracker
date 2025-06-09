@@ -1,4 +1,4 @@
-import { Secret } from 'jsonwebtoken';
+import { type Secret } from 'jsonwebtoken';
 
 const NODE_ENV = process.env.NODE_ENV;
 const isProduction = NODE_ENV === 'production';
@@ -7,7 +7,7 @@ const config = {
     databaseUrl: process.env.DATABASE_URL,
     redis: {
         host: process.env.REDIS_HOST,
-        port: process.env.REDIS_PORT,
+        port: Number(process.env.REDIS_PORT),
     },
     isProduction: isProduction,
     scrapeHourInterval: Number(process.env.SCRAPE_HOUR_INTERVAL) || 2,

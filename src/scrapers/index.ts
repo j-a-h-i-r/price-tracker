@@ -1,7 +1,7 @@
-import { BaseScraper } from './base-scraper.js';
-import { Website } from './scraper.types.js';
-import { StarTech, } from './startech.js';
-import { Techland, } from './techland.js';
+import { BaseScraper } from './base-scraper.ts';
+import { type Website } from './scraper.types.ts';
+import { StarTech, } from './startech.ts';
+import { Techland, } from './techland.ts';
 
 const scraperInstances = [new StarTech(), new Techland()];
 
@@ -11,4 +11,4 @@ export const scrapers: {website: Website, scraper: BaseScraper}[] = scraperInsta
         scraper,
     }));
 
-export * from './scraper.types.js';
+export * from './scraper.types.ts';

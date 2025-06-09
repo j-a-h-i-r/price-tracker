@@ -1,22 +1,22 @@
 import cookie from '@fastify/cookie';
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fastifyHelmet from '@fastify/helmet';
-import productRoutes from './products.js';
-import websiteRoutes from './websites.js';
-import categoryRoutes from './category.js';
-import metadataRoutes from './metadata.js';
-import dealRoutes from './deals.js';
-import filterRoutes from './filters.js';
-import authRoutes from './auth.js';
-import statsRoutes from './stats.js';
-import userRoutes from './user.js';
-import usersRoutes from './users.js';
-import potentialSimilarRoutes from './potentialsimilar.js';
-import manufacturerRoutes from './manufacturers.js';
-import config from '../core/config.js';
+import productRoutes from './products.ts';
+import websiteRoutes from './websites.ts';
+import categoryRoutes from './category.ts';
+import metadataRoutes from './metadata.ts';
+import dealRoutes from './deals.ts';
+import filterRoutes from './filters.ts';
+import authRoutes from './auth.ts';
+import statsRoutes from './stats.ts';
+import userRoutes from './user.ts';
+import usersRoutes from './users.ts';
+import potentialSimilarRoutes from './potentialsimilar.ts';
+import manufacturerRoutes from './manufacturers.ts';
+import config from '../core/config.ts';
 import { ZodError } from 'zod';
 import jwt from 'jsonwebtoken';
-import logger from '../core/logger.js';
+import logger from '../core/logger.ts';
 
 export default async function routes(fastify: FastifyInstance) {
     fastify.register(fastifyHelmet.default);

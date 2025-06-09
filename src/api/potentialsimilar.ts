@@ -1,5 +1,5 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { ProductService } from '../services/product.service.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { ProductService } from '../services/product.service.ts';
 import { z } from 'zod';
 
 const AllQuery = z.object({

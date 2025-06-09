@@ -1,7 +1,7 @@
-import cron from 'node-cron';
-import { startScraping } from './index.js';
-import logger from './core/logger.js';
-import { sdk } from './otlp.js';
+import logger from './core/logger.ts';
+import { sdk } from './otlp.ts';
+import { cronJobs } from './jobs/index.ts';
+import { JobManager } from './jobs/jobmanager.ts';
 
 /**
  * Set up the queeue, worker and cron job
@@ -10,25 +10,7 @@ import { sdk } from './otlp.js';
 export async function setupEverything() {
     logger.info('Setting up stuff');
 
-    const task = await setupCron();
-    logger.info('Cron job set up');
-    logger.info('Set up everything');
+    const jobManager = new JobManager(cronJobs);
 
-    return { task, otlpSdk: sdk };
-}
-
-async function setupCron() {
-    const cronScheduleString = '0 1 * * *'; // Every day at 1:00 AM
-    logger.debug('Cron Schedule %s', cronScheduleString);
-    
-    const task = cron.schedule(cronScheduleString, () => {
-        logger.info('Running scheduled scrape');
-        startScraping()
-            .then(() => logger.info('Scheduled scrape completed'))
-            .catch((error) => logger.error(error, 'Scheduled scrape failed'));
-    }, {
-        scheduled: false,
-    });
-    
-    return task;
+    return { jobManager, otlpSdk: sdk };
 }

@@ -1,5 +1,5 @@
-import { knex } from '../core/db.js';
-import { User } from '../types/user.types.js';
+import { knex } from '../core/db.ts';
+import { type User } from '../types/user.types.ts';
 
 export async function storeUser(email: string): Promise<User> {
     const existingUser = await knex('users').where('email', email).first();

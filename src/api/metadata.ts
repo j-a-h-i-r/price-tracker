@@ -1,5 +1,5 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { knex } from '../core/db.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { knex } from '../core/db.ts';
 
 type MetadataQuery = {
     category_id?: string, website_id?: string,

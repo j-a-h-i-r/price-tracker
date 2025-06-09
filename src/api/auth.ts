@@ -1,10 +1,10 @@
-import config from '../core/config.js';
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import config from '../core/config.ts';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
-import { sendAuthLinkEmail } from '../services/email.service.js';
-import { storeUser } from '../services/user.service.js';
+import { sendAuthLinkEmail } from '../services/email.service.ts';
+import { storeUser } from '../services/user.service.ts';
 import { z } from 'zod';
-import { logger } from '../core/logger.js';
+import { logger } from '../core/logger.ts';
 
 const NewAuthBodySchema = z.object({
     email: z.string().email(),
