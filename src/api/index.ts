@@ -26,14 +26,18 @@ export default async function routes(fastify: FastifyInstance) {
     fastify.addHook('onRequest', async (request) => {
         request.log.info({ method: request.method, url: request.url }, `[${request.id}] Incoming request - ${request.url}`);
         request.isAdmin = false;
+
         const authToken = request.cookies?.auth;
-        if (authToken && jwt.verify(authToken, config.jwtSecret)) {
-            // Token is valid, proceed with the request
-            request.user = jwt.decode(authToken) as { email: string };
+        if (authToken) {
+            try {
+                request.user = jwt.verify(authToken, config.jwtSecret) as { email: string };
+            } catch (error) {
+                request.log.error(error, 'Error verifying auth token');
+            }
         }
 
-        const token = request?.cookies?.ADMIN_TOKEN;
-        if (token === config.adminToken) {
+        const adminToken = request?.cookies?.ADMIN_TOKEN;
+        if (adminToken === config.adminToken) {
             request.isAdmin = true;
         }
     });
