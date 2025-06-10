@@ -1,11 +1,14 @@
+import type { DealsQuery } from '../api/deals.ts';
 import { knex } from '../core/db.ts';
+import type { CurrentDeal } from '../types/deal.types.ts';
 
 /**
  * 
  * @param days - Number of days to look back for price comparison
  * @returns 
  */
-export async function getAllDeals(days: number, sortby: 'value' | 'percentage') {
+export async function getAllDeals(filter: DealsQuery): Promise<CurrentDeal[]> {
+    const { days, sortby, manufacturer_id, category_id } = filter;
     let priceSortString = '';
     if (sortby === 'value') {
         priceSortString = 'mpw.max_price_last_days - lp.current_price desc';
@@ -41,7 +44,9 @@ export async function getAllDeals(days: number, sortby: 'value' | 'percentage') 
             lp.current_price,
             mpw.max_price_last_days,
             lp.created_at AS current_price_date,
-            lp.is_available
+            lp.is_available,
+            ip.category_id,
+            ip.manufacturer_id
         FROM LatestPrices lp
         JOIN MaxPriceLastDays mpw ON lp.external_product_id = mpw.external_product_id
         JOIN external_products ep ON lp.external_product_id = ep.id
@@ -50,6 +55,8 @@ export async function getAllDeals(days: number, sortby: 'value' | 'percentage') 
         WHERE
             lp.current_price < mpw.max_price_last_days
             AND lp.is_available IS TRUE -- doesn't make sense to show unavailable products
+            ${category_id ? knex.raw('AND ip.category_id = ?', category_id) : ''}
+            ${manufacturer_id ? knex.raw('AND ip.manufacturer_id = ?', manufacturer_id) : ''}
         ORDER BY
             ${priceSortString}, ip.name asc, w.name asc;
     `, [knex.raw(days)]);
