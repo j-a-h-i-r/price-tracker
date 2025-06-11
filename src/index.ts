@@ -3,7 +3,7 @@ import { setupServer } from './server.ts';
 import logger from './core/logger.ts';
 import config from './core/config.ts';
 import { setupEverything } from './setup.ts';
-// import { ScrapingJob } from './jobs/index.ts';
+// import { ScrapingJob } from './jobs/scrape.job.ts';
 
 try {
     const { jobManager, otlpSdk } = await setupEverything();

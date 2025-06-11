@@ -33,29 +33,11 @@ export class JobManager {
                 }
                 this.states.set(job.name, 'running');
 
-                logger.info(`Running job: ${job.name}`);
+                logger.info(`Running job: [${job.name}]`);
                 job.run()
                     .then(() => {
+                        this.states.set(job.name, 'completed');
                         logger.info(`Job [${job.name}] executed successfully`);
-
-                        if (Array.isArray(job.successors) && job.successors.length > 0) {
-                            logger.info(`Running successors for job: ${job.name}`);
-                            const successPromises = job.successors.map(successorJob => {
-                                return successorJob.run()
-                                    .then(() => logger.info(`Successor job [${successorJob.name}] executed successfully`))
-                                    .catch((error) => logger.error(error, `Successor job [${successorJob.name}] execution failed`));
-                            });
-
-                            Promise.all(successPromises)
-                                .then(() => {
-                                    this.states.set(job.name, 'completed');
-                                    logger.info(`All successors for job [${job.name}] executed successfully`);
-                                });
-                            
-                        } else {
-                            this.states.set(job.name, 'completed');
-                            logger.info(`Job [${job.name}] completed successfully with no successors`);
-                        }
                     })
                     .catch((error) => {
                         this.states.set(job.name, 'failed');

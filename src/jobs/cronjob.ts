@@ -34,7 +34,8 @@ export class Job {
             
             logger.info(`Running job ${this.name} from file: ${this.jobFile} in new process`);
             const sub = spawn('node', ['--experimental-strip-types', this.jobFile], {
-                stdio: 'inherit',
+                // Only need stdout and stderr for logging
+                stdio: ['ignore', 'inherit', 'inherit'],
                 detached: false,
             });
 
@@ -78,5 +79,33 @@ export class CronJob extends Job {
         if (Array.isArray(job.successors)) {
             this.successors = job.successors;
         }
+    }
+
+    override run(): Promise<void> {
+        return super.run().then(() => {
+            logger.info(`Cron job [${this.name}] completed. Checking for successors...`);
+            return this.#runSuccessors();
+        });
+    }
+
+    #runSuccessors(): Promise<void> {
+        if (this.successors.length === 0) {
+            logger.info(`No successors for job [${this.name}]`);
+            return Promise.resolve();
+        }
+
+        logger.info(`Running successors for job [${this.name}]: ${this.successors.map(s => s.name).join(', ')}`);
+        const successPromises = this.successors.map(successorJob => {
+            logger.info(`Running successor job: [${successorJob.name}] of job [${this.name}]`);
+            return successorJob.run()
+                .then(() => logger.info(`Successor job [${successorJob.name}] executed successfully`))
+                .catch((error) => logger.error(error, `Successor job [${successorJob.name}] execution failed`));
+        });
+
+        // Always resolve even it the successors fail
+        // TODO: Maybe handle this differently in the future
+        return Promise.all(successPromises)
+            .then(() => Promise.resolve())
+            .catch(() => Promise.resolve());
     }
 }
