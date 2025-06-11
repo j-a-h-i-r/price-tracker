@@ -2,6 +2,7 @@ import Email from 'email-templates';
 import config from './config.ts';
 
 const emailer = new Email({
+    preview: false,
     message: {
         from: config.mail.from,
     },
