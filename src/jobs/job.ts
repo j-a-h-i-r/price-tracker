@@ -1,66 +1,26 @@
-import { spawn } from 'child_process';
 import logger from '../core/logger.ts';
+import type { Task } from './task.ts';
 
-interface JobProps {
+export interface JobProps {
     name: string;
-    task?: () => Promise<void>;
-    jobFile?: string; // Optional job file path
+    task: Task;
 }
 
+/**
+ * Probably should be an interface or abstract class. But having it as concrete class
+ * allows easily creating simple jobs that just run a task.
+ */
 export class Job {
     readonly name: string;
-    task?: () => Promise<void>;
-    jobFile?: string;
+    task: Task;
 
     constructor(job: JobProps) {
         this.name = job.name;
-
-        if (job.task && job.jobFile) {
-            throw new Error(`Job [${this.name}] cannot have both a task and a job file specified.`);
-        }
-
-        if (job.task) {
-            this.task = job.task;
-        } else {
-            this.jobFile = job.jobFile;
-        }
-    }
-
-    #runJobInProcess() {
-        return new Promise<void>((resolve, reject) => {
-            if (!this.jobFile) {
-                return reject(new Error(`Job ${this.name} does not have a job file specified.`));
-            }
-            
-            logger.info(`Running job ${this.name} from file: ${this.jobFile} in new process`);
-            const sub = spawn('node', ['--experimental-strip-types', this.jobFile], {
-                // Only need stdout and stderr for logging
-                stdio: ['ignore', 'inherit', 'inherit'],
-                detached: false,
-            });
-
-            logger.info(`Job ${this.name} started with PID: ${sub.pid}`);
-
-            sub.on('close', (code) => {
-                logger.info(`Job ${this.name} completed with exit code ${code}`);
-                resolve();
-            });
-
-            sub.on('error', (error) => {
-                logger.error(error, `Error running job ${this.name}:`);
-                reject(error);
-            });
-        });
+        this.task = job.task;
     }
 
     run(): Promise<void> {
-        if (this.task) {
-            return this.task();
-        } else if (this.jobFile) {
-            return this.#runJobInProcess();
-        } else {
-            return Promise.reject(new Error(`No task or job file specified for job ${this.name}`));
-        }
+        return this.task.run();
     }
 }
 
@@ -82,7 +42,7 @@ export class CronJob extends Job {
     }
 
     override run(): Promise<void> {
-        return super.run().then(() => {
+        return this.task.run().then(() => {
             logger.info(`Cron job [${this.name}] completed. Checking for successors...`);
             return this.#runSuccessors();
         });

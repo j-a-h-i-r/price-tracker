@@ -1,6 +1,6 @@
 import cron, { type ScheduledTask } from 'node-cron';
 import logger from '../core/logger.ts';
-import type { CronJob } from './cronjob.ts';
+import type { CronJob } from './job.ts';
 
 export class JobManager {
     private jobs: Map<string, CronJob>;
