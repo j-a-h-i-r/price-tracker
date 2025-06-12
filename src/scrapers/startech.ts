@@ -143,12 +143,17 @@ export class StarTech extends BaseScraper {
 
     private parseSpecifications($: cheerio.Root): Record<string, string> {
         const specifications: Record<string, string> = {};
-        $('#specification').find('tr').each((i, el) => {
-            if ($(el).children().length == 2) {
-                const key = $(el).children().first().text().trim();
-                const value = $(el).children().last().text().trim();
-                specifications[key] = value;
-            }
+        $('#specification tbody').each((i, tbody) => {
+            const thead = $(tbody).prev();
+            const specGroup = thead.find('td.heading-row').first().text().trim() ?? '';
+
+            $(tbody).find('tr').each((j, tr) => {
+                if ($(tr).children().length == 2) {
+                    const key = $(tr).children().first().text().trim();
+                    const value = $(tr).children().last().text().trim();
+                    specifications[`${specGroup} >> ${key}`] = value;
+                }
+            });
         });
         return specifications;
     }

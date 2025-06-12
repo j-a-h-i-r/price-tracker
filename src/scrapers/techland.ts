@@ -134,12 +134,17 @@ export class Techland extends BaseScraper {
         const brand = productInfo['Brand'] ?? '';
 
         const specifications: Record<string, string> = {};
-        $('#tab-specification > div > table > tbody > tr').each((index, element) => {
-            const row = $(element);
-            const key = row.children().first().text().trim();
-            const value = row.children().last().text().trim();
-            specifications[key] = value;
+        $('#tab-specification > div > table > tbody').each((_i, tbody) => {
+            const thead = $(tbody).prev();
+            const specGroup = thead.find('tr > td > strong').first().text().trim() ?? '';
+            $(tbody).find('tr').each((_j, element) => {
+                const row = $(element);
+                const key = row.children().first().text().trim();
+                const value = row.children().last().text().trim();
+                specifications[`${specGroup} >> ${key}`] = value;
+            });
         });
+        
         return {
             name: $('#product > table > caption > div > h1').text().trim(),
             price: price,
