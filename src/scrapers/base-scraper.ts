@@ -32,14 +32,21 @@ export abstract class BaseScraper {
      */
     protected fetchWithThrottle(url: string) {
         return this.throttle((_url) => {
+            const ua = this.getUserAgent();
+            const headers: Record<string, string> = {};
+            if (ua) {
+                headers['User-Agent'] = ua;
+            }
             return request(_url, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:136.0) Gecko/20100101 Firefox/136.0'
-                }
+                headers: headers,
             }).then((response) => {
                 return response;
             });
         })(url);
+    }
+
+    protected getUserAgent(): string | null {
+        return 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:136.0) Gecko/20100101 Firefox/136.0';
     }
 
     /**
@@ -60,4 +67,9 @@ export abstract class BaseScraper {
      * Return a scraped product
      */
     abstract scrapeProducts(): AsyncGenerator<ProductJob>;
+
+    formatSpecKey(specGroup: string, specKey: string): string {
+        // Format the specification key to be more readable
+        return `${specGroup} >> ${specKey}`;
+    }
 }
