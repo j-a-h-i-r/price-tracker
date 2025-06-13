@@ -13,6 +13,7 @@ import userRoutes from './user.ts';
 import usersRoutes from './users.ts';
 import potentialSimilarRoutes from './potentialsimilar.ts';
 import manufacturerRoutes from './manufacturers.ts';
+import adminRoutes from './admin.ts';
 import config from '../core/config.ts';
 import { ZodError } from 'zod';
 import jwt from 'jsonwebtoken';
@@ -23,9 +24,21 @@ export default async function routes(fastify: FastifyInstance) {
     fastify.register(cookie);
 
     // Add hook to protect non-GET routes
-    fastify.addHook('onRequest', async (request) => {
+    fastify.addHook('onRequest', async (request, response) => {
         request.log.info({ method: request.method, url: request.url }, `[${request.id}] Incoming request - ${request.url}`);
         request.isAdmin = false;
+
+        const adminToken = request?.cookies?.ADMIN_TOKEN;
+        if (adminToken === config.adminToken) {
+            request.isAdmin = true;
+        }
+
+        if (request.url.startsWith('/api/admin') && !request.isAdmin) {
+            request.log.warn(`[${request.id}] Unauthorized access attempt to admin route: ${request.url}`);
+            return response
+                .status(403)
+                .send({ error: 'Unauthorized' });
+        }
 
         const authToken = request.cookies?.auth;
         if (authToken) {
@@ -34,11 +47,6 @@ export default async function routes(fastify: FastifyInstance) {
             } catch (error) {
                 request.log.error(error, 'Error verifying auth token');
             }
-        }
-
-        const adminToken = request?.cookies?.ADMIN_TOKEN;
-        if (adminToken === config.adminToken) {
-            request.isAdmin = true;
         }
     });
 
@@ -76,4 +84,5 @@ export default async function routes(fastify: FastifyInstance) {
     fastify.register(userRoutes, { prefix: '/user' });
     fastify.register(potentialSimilarRoutes, { prefix: '/potentialsimilar' });
     fastify.register(manufacturerRoutes, { prefix: '/manufacturers' });
+    fastify.register(adminRoutes, { prefix: '/admin' });
 }
