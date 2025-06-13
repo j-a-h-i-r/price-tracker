@@ -78,16 +78,24 @@ export const MetadataDefinitions: Record<MetadataKey, MetadataProperty> ={
     }
 };
 
+function parseFirstValidValue(kv: Record<string, string>, keys: string[]): string | null {
+    for (const key of keys) {
+        if (kv[key]) {
+            return kv[key];
+        }
+    }
+    return null;
+}
+
 const RAMParser: MetadataParser = {
     metadataKey: 'ram',
     parse(metadata: Record<string, string>): ParserOutput {
-        const { RAM, 'Memory Size': memorySize } = metadata;
-        if (!RAM || !memorySize) {
+        const ramText = parseFirstValidValue(
+            metadata, ['Memory >> RAM', 'Memory >> Memory Size']
+        );
+        if (!ramText) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
         }
-
-        const ramText = RAM || memorySize;
-
 
         const groups = /(?<ram_amount>\d+)\s*(?<ram_unit>GB|MB)/i.exec(ramText)?.groups;
         if (!groups) {
@@ -109,14 +117,16 @@ const RAMParser: MetadataParser = {
 const GPUMemoryParser: MetadataParser = {
     metadataKey: 'gpu_memory',
     parse(metadata: Record<string, string>): ParserOutput {
-        const { 'GPU Memory Size': gpuMemorySize, 'Graphics Memory': graphicsMemory } = metadata;
-        if (!gpuMemorySize && !graphicsMemory) {
+        const gpuMemoryText = parseFirstValidValue(
+            metadata,
+            ['Graphics >> GPU Memory Size', 'Graphics >> Graphics Memory'],
+        );
+        if (!gpuMemoryText) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
         }
-        const gpuMemory = gpuMemorySize || graphicsMemory;
-        const groups = /(?<gpu_amount>\d+)\s*(?<gpu_memory_unit>GB|MB)/i.exec(gpuMemory)?.groups;
+        const groups = /(?<gpu_amount>\d+)\s*(?<gpu_memory_unit>GB|MB)/i.exec(gpuMemoryText)?.groups;
         if (!groups) {
-            return { hasMetadata: true, parseSuccess: false, parsedMetadata: gpuMemory };
+            return { hasMetadata: true, parseSuccess: false, parsedMetadata: gpuMemoryText };
         }
         const { gpu_amount, gpu_memory_unit } = groups;
         let gpumMemoryNumeric = Number(gpu_amount);
