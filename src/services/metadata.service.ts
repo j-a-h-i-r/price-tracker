@@ -10,6 +10,7 @@ export type ParsedMetadata = Partial<{
     usb_thunderbolt: boolean;
     usb_version: '2' | '3';
     gpu_memory: number;
+    storage_size: number;
 }>
 
 export type MetadataKey = keyof ParsedMetadata;
@@ -75,6 +76,11 @@ export const MetadataDefinitions: Record<MetadataKey, MetadataProperty> ={
         displayName: 'GPU Memory',
         dataType: 'integer',
         unit: 'GB',
+    },
+    storage_size: {
+        displayName: 'Storage Size',
+        dataType: 'integer',
+        unit: 'GB',
     }
 };
 
@@ -91,13 +97,16 @@ const RAMParser: MetadataParser = {
     metadataKey: 'ram',
     parse(metadata: Record<string, string>): ParserOutput {
         const ramText = parseFirstValidValue(
-            metadata, ['Memory >> RAM', 'Memory >> Memory Size']
+            metadata, [
+                'Memory >> RAM', 'Memory >> Memory Size', 'Main Feature >> RAM',
+                'Storage >> ROM',
+            ]
         );
         if (!ramText) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
         }
 
-        const groups = /(?<ram_amount>\d+)\s*(?<ram_unit>GB|MB)/i.exec(ramText)?.groups;
+        const groups = /^(?<ram_amount>\d+)\s*(?<ram_unit>GB|MB)/i.exec(ramText)?.groups;
         if (!groups) {
             return { hasMetadata: true, parseSuccess: false, parsedMetadata: ramText };
         }
@@ -222,12 +231,42 @@ const USBParser: MetadataParser = {
     }
 };
 
+const StorageSizeParser: MetadataParser = {
+    metadataKey: 'storage_size',
+    parse(metadata: Record<string, string>): ParserOutput {
+        const storageSizeText = parseFirstValidValue(
+            metadata,
+            ['Main Feature >> Storage', 'Storage >> Storage', 'Storage >> ROM'],
+        );
+        if (!storageSizeText) {
+            return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
+        }
+        const groups = /^(?<storage_amount>\d+)\s*(?<storage_unit>GB|MB|TB)/i.exec(storageSizeText)?.groups;
+        if (!groups) {
+            return { hasMetadata: true, parseSuccess: false, parsedMetadata: storageSizeText };
+        }
+        const { storage_amount, storage_unit } = groups;
+        let storageSizeNumeric = Number(storage_amount);
+        if (storage_unit.toLowerCase() === 'mb') {
+            storageSizeNumeric = storageSizeNumeric / 1024;
+        } else if (storage_unit.toLowerCase() === 'tb') {
+            storageSizeNumeric = storageSizeNumeric * 1024; // Convert TB to GB
+        }
+        return {
+            hasMetadata: true,
+            parseSuccess: true,
+            parsedMetadata: { [this.metadataKey]: storageSizeNumeric }
+        };
+    }
+};
+
 export const metadataParsers: MetadataParser[] = [
     RAMParser,
     WeightParser,
     SIMParser,
     USBParser,
     GPUMemoryParser,
+    StorageSizeParser,
 ];
 
 function fetchMinMaxValues(metadata: MetadataKey)  {

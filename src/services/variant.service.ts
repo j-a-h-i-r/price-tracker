@@ -7,4 +7,5 @@ import { MetadataDefinitions, type MetadataKey, type MetadataProperty } from './
 export const VariantAttributes: Partial<Record<MetadataKey, MetadataProperty>> = {
     ram: MetadataDefinitions.ram,
     gpu_memory: MetadataDefinitions.gpu_memory,
+    storage_size: MetadataDefinitions.storage_size,
 };

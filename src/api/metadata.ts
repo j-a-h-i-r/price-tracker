@@ -12,7 +12,7 @@ export default async function routes(fastify: FastifyInstance) {
         }
         // Return all metadata
         const { category_id, website_id } = req.query;
-        const metadataSet = new Set();
+        const metadataCount = new Map();
         const metadataQuery = knex
             .select('raw_metadata')
             .from('external_products');
@@ -26,10 +26,15 @@ export default async function routes(fastify: FastifyInstance) {
         metadatas.forEach((item) => {
             const { raw_metadata } = item;
             Object.keys(raw_metadata).forEach((key) => {
-                metadataSet.add(key);
+                metadataCount.set(key, (metadataCount.get(key) || 0) + 1);
             });
         });
-        const metadataArray = Array.from(metadataSet);
+        const metadataArray = Array.from(metadataCount)
+        .sort((a, b) => b[1] - a[1]) // Sort by metadata key
+        .map(([key, count]) => ({
+            metadata: key,
+            count,
+        }));
         return metadataArray;
     });
 
