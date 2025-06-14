@@ -68,8 +68,11 @@ export abstract class BaseScraper {
      */
     abstract scrapeProducts(): AsyncGenerator<ProductJob>;
 
-    formatSpecKey(specGroup: string, specKey: string): string {
+    formatSpecKey(specGroup: string | null, specKey: string): string {
         // Format the specification key to be more readable
+        if (!specGroup) {
+            return specKey;
+        }
         return `${specGroup} >> ${specKey}`;
     }
 }
