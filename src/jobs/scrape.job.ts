@@ -20,7 +20,7 @@ export class ScrapingJob extends CronJob {
     constructor() {
         super({
             name: 'scraping',
-            schedule: '0 1 * * *', // Every day at 1:00 AM
+            schedule: '0 0 * * *', // Every day at 12:00 AM
             task: new SanboxedTask('src/jobs/sandboxed/scrape.sandboxed.ts'),
             successors: [priceUpdateEmailJob],
         });
