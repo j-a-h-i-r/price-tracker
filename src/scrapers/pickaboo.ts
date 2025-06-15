@@ -16,9 +16,9 @@ export class Pickaboo extends BaseScraper {
 
     readonly categories: CategoryLink[] = [
         { category: 'Phone', url: 'https://www.pickaboo.com/product/smartphone', },
-        // { category: 'Monitor', url: 'https://www.ryans.com/category/monitor-all-monitor', },
-        // { category: 'Tablet', url: 'https://www.ryans.com/category/tablet', },
-        // { category: 'Keyboard', url: 'https://www.ryans.com/category/desktop-component-keyboard', },
+        { category: 'Laptop', url: 'https://www.pickaboo.com/product/laptop-notebook', },
+        { category: 'Tablet', url: 'https://www.pickaboo.com/product/tablet', },
+        { category: 'Monitor', url: 'https://www.pickaboo.com/product/monitor', },
         // { category: 'Processor', url: 'https://www.ryans.com/category/desktop-component-processor' },
     ];
 
