@@ -23,6 +23,7 @@ export class StarTech extends BaseScraper {
         { category: 'Tablet', url: 'https://www.startech.com.bd/tablet-pc', },
         { category: 'Keyboard', url: 'https://www.startech.com.bd/accessories/keyboards', },
         { category: 'Processor', url: 'https://www.startech.com.bd/component/processor' },
+        { category: 'Air Conditioner', url: 'https://www.startech.com.bd/air-conditioner'},
     ];
 
     async fetchAllProductLinksForCategory(category: CategoryLink): Promise<string[]> {

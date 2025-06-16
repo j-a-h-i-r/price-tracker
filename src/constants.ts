@@ -36,6 +36,10 @@ export const categories = [
         id: 8,
         name: 'Processor',
     },
+    {
+        id: 9,
+        name: 'Air Conditioner',
+    },
 ] as const satisfies readonly (Category)[];
 
 export type CategoryName = typeof categories[number]['name'];

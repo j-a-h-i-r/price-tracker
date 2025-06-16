@@ -23,6 +23,7 @@ export class Techland extends BaseScraper {
         { category: 'Tablet', url: 'https://www.techlandbd.com/smartphone-and-tablet/tablet-pc' },
         { category: 'Camera', url: 'https://www.techlandbd.com/shop-cameras' },
         { category: 'Keyboard', url: 'https://www.techlandbd.com/accessories/computer-keyboard' },
+        { category: 'Air Conditioner', url: 'https://www.techlandbd.com/home-appliance/air-conditioner' },
     ];
 
     async fetchAllProductLinksForCategory(category: CategoryLink): Promise<string[]> {
