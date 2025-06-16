@@ -236,7 +236,10 @@ const StorageSizeParser: MetadataParser = {
     parse(metadata: Record<string, string>): ParserOutput {
         const storageSizeText = parseFirstValidValue(
             metadata,
-            ['Main Feature >> Storage', 'Storage >> Storage', 'Storage >> ROM'],
+            [
+                'Main Feature >> Storage', 'Storage >> Storage', 'Storage >> ROM',
+                'Storage >> Storage Capacity',
+            ],
         );
         if (!storageSizeText) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
