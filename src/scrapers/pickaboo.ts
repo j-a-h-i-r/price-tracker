@@ -81,7 +81,7 @@ export class Pickaboo extends BaseScraper {
     }
 
 
-    private async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
+    async fetchListingPageHtml(url: string, pageNumber: number): Promise<string> {
         const pageUrl = `${url}?page=${pageNumber}`;
         const req = await this.fetchWithThrottle(pageUrl);
         return req.body.text();
@@ -110,51 +110,45 @@ export class Pickaboo extends BaseScraper {
         return pageLinks;
     }
 
+    async fetchProductPageHtml(pageUrl: string): Promise<string> {
+        const req = await this.fetchWithThrottle(pageUrl);
+        return req.body.text();
+    }
+
     async parseProductPage(pageUrl: string): Promise<ScrapedProduct> {
         logger.debug(`Scraping ${pageUrl}`);
-
-        const req = await this.fetchWithThrottle(pageUrl);
-        const html = await req.body.text();
+        const html = await this.fetchProductPageHtml(pageUrl);
         const $ = cheerio.load(html);
 
-        const priceProp = $('div.price-view > h2:nth-child(1)').text().trim();
-        let price: number | null = null;
-        const parsedPrice = parseFloat(
-            priceProp
-            .replace(/^[^\d+]/, '') // Remove any non-numeric characters at the start
-            .replace(',', '') // Remove commas
-        );
-        if (!isNaN(parsedPrice)) {
-            price = parsedPrice;
-        }
+        const jsonPropText = $('script[id=__NEXT_DATA__]').text().trim();
+        const jsonProp = JSON.parse(jsonPropText);
+        const productData = jsonProp.props.pageProps;
+
+        const regularPrice = productData?.productPrice;
+        const specialPrice = productData?.productSpecialPrice;
+        const price = specialPrice ? specialPrice : regularPrice;
+
+        const productName = productData?.product?.name ?? $('h1.title').text().trim();
+        const brand = productData?.product?.brand ?? $('div.brand-view > p > div > span').text().trim();
+
+        const metadataList = productData?.productMoreInformation ?? [];
+        const specifications: Record<string, string> = {};
+        metadataList.forEach((item: { group_label: string; attr_list: { label: string; value: string }[] }) => {
+            const { group_label, attr_list } = item;
+            attr_list.forEach(attr => {
+                const key = this.formatSpecKey(group_label, attr.label);
+                specifications[key] = attr.value;
+            });
+        });
 
         return {
-            name: $('h1.title').text().trim(),
+            name: productName,
             price: price,
             isAvailable: true,
             url: pageUrl,
             slug: pageUrl.split('/').pop() ?? '',
-            manufacturer: $('div.brand-view > p > div > span').text().trim(),
-            raw_metadata: this.parseSpecifications($),
+            manufacturer: brand,
+            raw_metadata: specifications,
         };
-    }
-
-    private parseSpecifications($: cheerio.Root): Record<string, string> {
-        const specifications: Record<string, string> = {};
-        $('section#specification table').each((_i, table) => {
-            let specGroupName: string | null = null;
-            $(table).find('tr').each((rowNum, row) => {
-                if (rowNum === 0) {
-                    specGroupName = $(row).find('h3').text().trim();
-                } else {
-                    const key = $(row).children().first().text().trim();
-                    const value = $(row).children().last().text().trim();
-                    if (key && value) {
-                        specifications[this.formatSpecKey(specGroupName, key)] = value;
-                    }
-                }
-            });
-        });
-        return specifications;
     }
 }
