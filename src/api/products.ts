@@ -168,6 +168,7 @@ export default async function routes(fastify: FastifyInstance) {
         const productService = new ProductService();
         try {
             await productService.mergeProducts(id, productIds);
+            cache.clear(); // Clear cache after merging products
             return true;
         } catch (error) {
             logger.error(error, 'Failed to merge products');
