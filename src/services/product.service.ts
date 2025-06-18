@@ -618,7 +618,7 @@ export class ProductService {
                     p2.id as product_2_external_id,
                     p2.internal_product_id as product_2_internal_id,
                     p2.website_id as product_2_website_id,
-                    similarity(p1.name, p2.name) as name_similarity
+                    strict_word_similarity(p1.name, p2.name) as name_similarity
                 FROM external_products_with_mfg p1
                 INNER JOIN external_products_with_mfg p2 ON 
                     p1.id < p2.id  -- Avoid self-matches and duplicate pairs
@@ -627,7 +627,7 @@ export class ProductService {
                     and p1.website_id != p2.website_id -- must be different website
                     and p1.internal_product_id != p2.internal_product_id -- must not be same product
                 WHERE 
-                    similarity(p1.name, p2.name) > ?  -- Adjust threshold as needed
+                    strict_word_similarity(p1.name, p2.name) > ?  -- Adjust threshold as needed
             ),
             similar_products_deduped AS (
             	SELECT * FROM (
