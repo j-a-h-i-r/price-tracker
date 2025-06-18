@@ -38,6 +38,11 @@ const MergeProductsBodySchema = z.object({
 }).strict();
 export type MergeProductsBody = z.infer<typeof MergeProductsBodySchema>;
 
+const UnMergeProductsBody = z.object({
+    external_product_id: z.coerce.number(),
+}).strict();
+export type UnMergeProductsBody = z.infer<typeof UnMergeProductsBody>;
+
 const PriceTrackBodySchema = z.object({
     target_price: z.string().or(z.number()).transform(Number),
 });
@@ -172,6 +177,25 @@ export default async function routes(fastify: FastifyInstance) {
             return true;
         } catch (error) {
             logger.error(error, 'Failed to merge products');
+            return reply.code(500).send(false);
+        }
+    });
+
+    fastify.put('/:id/unmerge', async (req: FastifyRequest<{Params: IdParam, Body: UnMergeProductsBody}>, reply) => {
+        // This is an admin only endpoint
+        if (!req.isAdmin) {
+            return reply.code(401).send({ error: 'Unauthorized' });
+        }
+        const { id } = IdParam.parse(req.params);
+        const { external_product_id } = UnMergeProductsBody.parse(req.body);
+        const productService = new ProductService();
+        try {
+            const newId = await productService.unmergeProducts(id, external_product_id);
+            logger.info(`Unmerged product ${id} from external product ${external_product_id}, new ID is ${newId}`);
+            cache.clear(); // Clear cache after unmerging products
+            return newId;
+        } catch (error) {
+            logger.error(error, 'Failed to unmerge products');
             return reply.code(500).send(false);
         }
     });

@@ -560,6 +560,49 @@ export class ProductService {
         });
     }
 
+    async unmergeProducts(internalProductId: number, externalProductId: number): Promise<void> {
+        const newId = await knex.transaction(async (trx) => {
+            // Create a new internal product which will hold the unmerged products
+            const internalProduct = await trx('internal_products')
+                .select('*').where('id', internalProductId)
+                .first();
+            if (!internalProduct) {
+                throw new Error(`Internal product with id ${internalProductId} not found`);
+            }
+
+            const externalProduct = await trx('external_products')
+                .select('*')
+                .where('id', externalProductId)
+                .first();
+            if (!externalProduct) {
+                throw new Error(`No external products found for id: ${externalProductId}`);
+            }
+            const { category_id, manufacturer_id } = internalProduct;
+            const toInsert = {
+                name: externalProduct.name,
+                category_id: category_id,
+                manufacturer_id: manufacturer_id,
+            };
+
+            const newIds = await trx('internal_products')
+                .insert(toInsert)
+                .returning('id');
+            if (!newIds) {
+                throw new Error('Failed to create a new internal product');
+            }
+            const newId = newIds[0].id;
+            
+            await trx('external_products')
+                .update({ internal_product_id: newId })
+                .where('id', externalProductId);
+            return newId;
+        });
+
+        // Now need to refresh the materialized view
+        await this.refreshLatestPricesMaterializedView();
+        return newId;
+    }
+
     async ignoreProducts(internalProductId: number, internalProductIdsToIgnore: number[]): Promise<void> {
         await knex('similar_internal_products')
             .update({ marked_different: true })
