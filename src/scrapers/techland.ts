@@ -24,6 +24,7 @@ export class Techland extends BaseScraper {
         { category: 'Camera', url: 'https://www.techlandbd.com/shop-cameras' },
         { category: 'Keyboard', url: 'https://www.techlandbd.com/accessories/computer-keyboard' },
         { category: 'Air Conditioner', url: 'https://www.techlandbd.com/home-appliance/air-conditioner' },
+        { category: 'Gaming Console', url: 'https://www.techlandbd.com/game-zone/gaming-console' },
     ];
 
     async fetchAllProductLinksForCategory(category: CategoryLink): Promise<string[]> {

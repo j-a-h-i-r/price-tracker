@@ -20,6 +20,7 @@ export class Pickaboo extends BaseScraper {
         { category: 'Tablet', url: 'https://www.pickaboo.com/product/tablet', },
         { category: 'Monitor', url: 'https://www.pickaboo.com/product/monitor', },
         { category: 'Air Conditioner', url: 'https://www.pickaboo.com/product/air-conditioner' },
+        { category: 'Gaming Console', url: 'https://www.pickaboo.com/product/gaming-console?cat=155' },
     ];
 
     async fetchAllProductLinksForCategory(category: CategoryLink): Promise<string[]> {

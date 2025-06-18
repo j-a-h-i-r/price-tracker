@@ -15,7 +15,7 @@ export class RyansComputer extends BaseScraper {
     }
 
     readonly categories: CategoryLink[] = [
-        { category: 'Laptop', url: 'https://www.ryans.com/category/laptop-all-laptop', },
+        // { category: 'Laptop', url: 'https://www.ryans.com/category/laptop-all-laptop', },
         // { category: 'Monitor', url: 'https://www.ryans.com/category/monitor-all-monitor', },
         // { category: 'Tablet', url: 'https://www.ryans.com/category/tablet', },
         // { category: 'Keyboard', url: 'https://www.ryans.com/category/desktop-component-keyboard', },
