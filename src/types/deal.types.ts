@@ -9,4 +9,5 @@ export interface CurrentDeal {
     is_available: boolean,
     category_id: number,
     manufacturer_id: number,
+    external_product_id: number,
 }

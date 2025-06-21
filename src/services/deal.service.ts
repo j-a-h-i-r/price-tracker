@@ -36,7 +36,8 @@ export async function getAllDeals(filter: DealsQuery): Promise<CurrentDeal[]> {
             lp.created_at AS current_price_date,
             lp.is_available,
             ip.category_id,
-            ip.manufacturer_id
+            ip.manufacturer_id,
+            lp.external_product_id
         FROM external_products_latest_price lp
         JOIN MaxPriceLastDays mpw ON lp.external_product_id = mpw.external_product_id
         JOIN external_products ep ON lp.external_product_id = ep.id
