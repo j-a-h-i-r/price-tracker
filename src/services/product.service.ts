@@ -1,7 +1,9 @@
-import { NumericFilter, type ProductQuery } from '../api/products.ts';
+import type { ExternalProductQuery } from '../api/externals.ts';
+import { type ProductQuery } from '../api/products.ts';
 import { type Category } from '../constants.ts';
 import { knex } from '../core/db.ts';
 import logger from '../core/logger.ts';
+import type { MetadataKey, NumericRangeFilter } from '../types/metadata.types.ts';
 import type {
     ExternalManufacturer, ExternalProduct, ExternalProductAPI, ExternalProductPrice,
     InternalProduct, InternalProductLastestPriceWithLowstAvailablePrice,
@@ -9,13 +11,13 @@ import type {
     ExternalProductRawMetadata, ProductWithExternalId, ProductWithExternalIdAndManufacturer,
     ProductWithManufacturerId, TrackedProductBelowPrice, ProductVariant, ExternalProductMetadata
 } from '../types/product.types.ts';
-import { MetadataDefinitions, type MetadataKey, metadataParsers } from './metadata.service.ts';
+import { MetadataDefinitions, metadataParsers } from './metadata.service.ts';
 import { getUserByEmail } from './user.service.ts';
 import { VariantAttributes } from './variant.service.ts';
 
 export class ProductService {
-    convertNumericFilterToSqlConditions(filter: NumericFilter): ['=' | '>' | '<', number][] {
-        const conditions: ['=' | '>' | '<', number][] = [];
+    convertNumericFilterToSqlConditions(filter: NumericRangeFilter): ['=' | '>=' | '<=', number][] {
+        const conditions: ['=' | '>=' | '<=', number][] = [];
         if (filter) {
             if (typeof filter === 'number') {
                 conditions.push(['=', filter]);
@@ -24,11 +26,11 @@ export class ProductService {
                     conditions.push(['=', filter.eq]);
                 } else {
                     if (filter.gt) {
-                        conditions.push(['>', filter.gt]);
+                        conditions.push(['>=', filter.gt]);
                     }
                     
                     if (filter.lt) {
-                        conditions.push(['<', filter.lt]);
+                        conditions.push(['<=', filter.lt]);
                     }
                 } 
             }
@@ -237,8 +239,71 @@ export class ProductService {
         await knex('prices').insert(prices);
     }
 
-    async getExternalProducts(): Promise<ExternalProduct[]> {
-        return knex<ExternalProduct>('external_products').select('*');
+    async getExternalProducts(filters: ExternalProductQuery, { includeRawMetadata = false } = {}): Promise<ExternalProduct[]> {
+        const query =  knex<ExternalProduct>('external_products as ep');
+        query.innerJoin(
+            'internal_products as ip',
+            'ep.internal_product_id',
+            'ip.id'
+        );
+        query.innerJoin(
+            'external_products_latest_price as eplp',
+            'ep.id',
+            'eplp.external_product_id'
+        );
+        const selectedColumns = [
+            'ep.id', 'ep.internal_product_id', 'ep.category_id', 'ep.website_id',
+            'ep.name', 'ep.url', 'ep.created_at', 'ep.updated_at',
+            knex.raw('ep.parsed_metadata || ep.manual_metadata as parsed_metadata'),
+            'ip.id as product_id',
+            'eplp.price as latest_price',
+            'eplp.is_available as is_available',
+        ];
+        if (includeRawMetadata) {
+            query.select(
+                ...selectedColumns,
+                'ep.raw_metadata',
+            );
+        } else {
+            query.select(...selectedColumns);
+        }
+        if (filters.category_id) {
+            query.where('ep.category_id', filters.category_id);
+        }
+        if (filters.name) {
+            query.where('ep.name', 'ILIKE', `%${filters.name}%`);
+        }
+        if (filters.manufacturer_id) {
+            query.where('ip.manufacturer_id', filters.manufacturer_id);
+        }
+        if (filters.price) {
+            const priceConditions = this.convertNumericFilterToSqlConditions(filters.price);
+            priceConditions.forEach(([op, value]) => {
+                query.andWhere('eplp.price', op, value);
+            });
+        }
+        if (filters.metadata) {
+            Object.keys(filters.metadata).forEach((key) => {
+                const prop = MetadataDefinitions[key as MetadataKey];
+                const filter = filters.metadata?.[key as keyof typeof filters.metadata];
+                if (filter) {
+                    if (prop.type === 'range') {
+                        const filters = this.convertNumericFilterToSqlConditions(filter as NumericRangeFilter);
+                        filters.forEach(([op, val]) => {
+                            query.whereRaw(`(ep.parsed_metadata ->> '${key}')::float ${op} ? `, [val]);
+                        });
+                    } else if (prop.type === 'boolean') {
+                        query.whereRaw(`(ep.parsed_metadata ->> '${key}')::boolean = ?`, [filter]);
+                    } else if (prop.type === 'set') {
+                        query.whereRaw(`(ep.parsed_metadata ->> '${key}')::text = ?`, [filter]);
+                    }
+                }
+            });
+        }
+        if (filters.limit) {
+            query.limit(filters.limit);
+        }
+        return query;
     }
 
     async getExternalProductsRawMedatas(): Promise<ExternalProductRawMetadata[]> {
@@ -842,19 +907,18 @@ export class ProductService {
         const metadata = rows[0]?.metadata;
         const metadataFormatted = Object.keys(metadata).map((key) => {
             const definition = MetadataDefinitions[key as MetadataKey];
-            const unit = definition?.unit || '';
             let valueDisplayText = metadata[key];
-            if (unit) {
-                valueDisplayText = `${metadata[key]} ${unit}`;
+            if (definition.type === 'range') {
+                 valueDisplayText = `${metadata[key]} ${definition.unit}`;
             }
-            if (definition?.dataType === 'boolean') {
+            if (definition.type === 'boolean') {
                 valueDisplayText = metadata[key] ? '✅' : '❌';
             }
 
             return {
                 name: key,
                 value: metadata[key],
-                unit: definition?.unit ?? '',
+                unit: definition.type === 'range' ? definition.unit : '',
                 name_display_text: definition?.displayName || key,
                 value_display_text: valueDisplayText,
             };

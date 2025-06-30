@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { ExternalIdParam, IdParam } from './types.ts';
 import logger from '../core/logger.ts';
 import { cache } from '../core/cache.ts';
+import { MetadataDefinitions } from '../services/metadata.service.ts';
+import { NumericRangeFilter } from '../types/metadata.types.ts';
 
 interface PriceQuery {
     from?: string;
@@ -18,13 +20,31 @@ export const NumericFilter = z.union([
     z.record(z.enum(['eq', 'gt', 'lt']), z.string().transform(Number))
 ]);
 export type NumericFilter = z.infer<typeof NumericFilter>;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const BooleanFilter = z.boolean();
+ 
+const BooleanFilter = z.coerce.boolean();
+type BooleanFilter = z.infer<typeof BooleanFilter>;
 
-const ProductQuerySchema = z.object({
+export const ProductMetadataSchema = z.object(Object.entries(MetadataDefinitions)
+.reduce<Record<string, z.ZodType>>((acc, [key, value]) => {
+    const { dataType } = value;
+    if (dataType === 'integer' || dataType === 'float') {
+        acc[key] = NumericFilter;
+    } else if (dataType === 'string') {
+        acc[key] = StringFilter.optional();
+    } else if (dataType === 'boolean') {
+        acc[key] = BooleanFilter.optional();
+    } else {
+        logger.warn(`Unknown metadata type for ${key}: ${dataType}`);
+    }
+    return acc;
+}, {})).strict();
+
+export const ProductQuerySchema = z.object({
     name: StringFilter.optional(),
-    price: NumericFilter.optional(),
+    price: NumericRangeFilter.optional(),
     limit: z.coerce.number().optional(),
+    category_id: z.coerce.number().optional(),
+    manufacturer_id: z.coerce.number().optional(),
 }).strict();
 export type ProductQuery = z.infer<typeof ProductQuerySchema>;
 
@@ -50,6 +70,7 @@ type PriceTrackBody = z.infer<typeof PriceTrackBodySchema>;
 
 const ProductVariantQuerySchema = z.object({
     variants: z.record(z.string(), z.any()).optional(),
+    metadata: ProductMetadataSchema.partial().optional(),
 });
 type ProductVariantQuery = z.infer<typeof ProductVariantQuerySchema>;
 

@@ -14,6 +14,7 @@ import usersRoutes from './users.ts';
 import potentialSimilarRoutes from './potentialsimilar.ts';
 import manufacturerRoutes from './manufacturers.ts';
 import adminRoutes from './admin.ts';
+import externalRoutes from './externals.ts';
 import config from '../core/config.ts';
 import { ZodError } from 'zod';
 import jwt from 'jsonwebtoken';
@@ -69,7 +70,8 @@ export default async function routes(fastify: FastifyInstance) {
             if (!config.isProduction) return error;
             return reply.status(500).send({ error: 'Internal error' });
         }
-        return error;
+        logger.error(error, 'Unhandled error in API');
+        return reply.status(500).send({ error: 'Internal error' });
     });
 
     fastify.register(categoryRoutes, { prefix: '/categories' });
@@ -85,4 +87,5 @@ export default async function routes(fastify: FastifyInstance) {
     fastify.register(potentialSimilarRoutes, { prefix: '/potentialsimilar' });
     fastify.register(manufacturerRoutes, { prefix: '/manufacturers' });
     fastify.register(adminRoutes, { prefix: '/admin' });
+    fastify.register(externalRoutes, { prefix: '/externals' });
 }

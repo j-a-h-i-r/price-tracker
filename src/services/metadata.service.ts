@@ -1,90 +1,95 @@
+import z from 'zod';
 import { knex } from '../core/db.ts';
+import {
+    BooleanFilter, NumericRangeFilter, StringFilter,
+    type Metadata, type MetadataFilterOutput, type MetadataParser,
+    type ParsedMetadata, type ParserOutput
+} from '../types/metadata.types.ts';
 
-export type MetadataDataType = 'string' | 'integer' | 'float' | 'boolean';
-
-export type ParsedMetadata = Partial<{
-    ram: string;
-    weight: number;
-    sim_esim: boolean;
-    usb_type_c: boolean;
-    usb_thunderbolt: boolean;
-    usb_version: '2' | '3';
-    gpu_memory: number;
-    storage_size: number;
-}>
-
-export type MetadataKey = keyof ParsedMetadata;
-export type MetadataProperty = {
-    displayName: string;
-    dataType?: MetadataDataType;
-    unit?: string;
-}
-
-interface ParserOutputSuccess {
-    hasMetadata: true;
-    parseSuccess: true;
-    parsedMetadata: ParsedMetadata;
-}
-
-interface ParserOutputFailure {
-    hasMetadata: true;
-    parseSuccess: false;
-    parsedMetadata: string;
-}
-
-interface ParserOutputNoOp {
-    hasMetadata: false;
-    parseSuccess: false;
-    parsedMetadata: null;
-}
-
-export type ParserOutput = ParserOutputSuccess | ParserOutputFailure | ParserOutputNoOp;
-
-export interface MetadataParser {
-    metadataKey: MetadataKey;
-    parse: (metadata: Record<string, string>) => ParserOutput;
-}
-
-export const MetadataDefinitions: Record<MetadataKey, MetadataProperty> ={
+/**
+ * Source of truth for supported metadatas
+ * @TODO: Probably should turn it into an array
+ */
+export const MetadataDefinitions: Metadata = {
     ram: {
         displayName: 'RAM',
         dataType: 'integer',
         unit: 'GB',
+        type: 'range',
+        key: 'ram',
     },
     weight: {
         displayName: 'Weight',
         dataType: 'float',
         unit: 'gm',
+        type: 'range',
+        key: 'weight',
     },
     sim_esim: {
         displayName: 'eSIM Support',
         dataType: 'boolean',
+        type: 'boolean',
+        key: 'sim_esim',
     },
     usb_type_c: {
         displayName: 'USB Type-C',
         dataType: 'boolean',
+        type: 'boolean',
+        key: 'usb_type_c',
     },
     usb_thunderbolt: {
         displayName: 'USB Thunderbolt',
         dataType: 'boolean',
+        type: 'boolean',
+        key: 'usb_thunderbolt',
     },
     usb_version: {
         displayName: 'USB Version',
         dataType: 'string',
+        type: 'set',
+        key: 'usb_version',
     },
     gpu_memory: {
         displayName: 'GPU Memory',
         dataType: 'integer',
         unit: 'GB',
+        type: 'range',
+        key: 'gpu_memory',
     },
     storage_size: {
         displayName: 'Storage Size',
         dataType: 'integer',
         unit: 'GB',
-    }
+        type: 'range',
+        key: 'storage_size',
+    },
 };
 
-function parseFirstValidValue(kv: Record<string, string>, keys: string[]): string | null {
+export function isMetadataKey(key: string): key is keyof Metadata {
+    return key in MetadataDefinitions;
+}
+
+export const MetadataFiltersSchema = z.object({
+    ram: NumericRangeFilter,
+    weight: NumericRangeFilter,
+    sim_esim: BooleanFilter,
+    usb_type_c: BooleanFilter,
+    usb_thunderbolt: BooleanFilter,
+    usb_version: StringFilter,
+    gpu_memory: NumericRangeFilter,
+    storage_size: NumericRangeFilter,
+}).partial();
+export type MetadataFiltersSchema = z.infer<typeof MetadataFiltersSchema>;
+
+/**
+ * Given a key-value pair object and an array of keys,
+ * this function returns the first defined (not null or undefined) value for
+ * any of the keys in the kv pair
+ * @param kv 
+ * @param keys 
+ * @returns 
+ */
+function parseFirstDefinedValue(kv: Record<string, string>, keys: string[]): string | null {
     for (const key of keys) {
         if (kv[key]) {
             return kv[key];
@@ -96,7 +101,7 @@ function parseFirstValidValue(kv: Record<string, string>, keys: string[]): strin
 const RAMParser: MetadataParser = {
     metadataKey: 'ram',
     parse(metadata: Record<string, string>): ParserOutput {
-        const ramText = parseFirstValidValue(
+        const ramText = parseFirstDefinedValue(
             metadata, [
                 'Memory >> RAM', 'Memory >> Memory Size', 'Main Feature >> RAM',
                 'Storage >> ROM',
@@ -126,7 +131,7 @@ const RAMParser: MetadataParser = {
 const GPUMemoryParser: MetadataParser = {
     metadataKey: 'gpu_memory',
     parse(metadata: Record<string, string>): ParserOutput {
-        const gpuMemoryText = parseFirstValidValue(
+        const gpuMemoryText = parseFirstDefinedValue(
             metadata,
             ['Graphics >> GPU Memory Size', 'Graphics >> Graphics Memory'],
         );
@@ -185,7 +190,7 @@ const SIMParser: MetadataParser = {
         if (!sim) {
             return { hasMetadata: false, parseSuccess: false, parsedMetadata: null };
         }
-        let parsedSim: ParsedMetadata = {
+        let parsedSim: Partial<ParsedMetadata> = {
             sim_esim: false
         };
         if (sim.toLowerCase().includes('esim')) {
@@ -208,7 +213,7 @@ const USBParser: MetadataParser = {
             usb = usb_port;
         }
 
-        const parsedUsb: ParsedMetadata = {
+        const parsedUsb: Partial<ParsedMetadata> = {
             usb_type_c: false,
             usb_thunderbolt: false,
         };
@@ -234,7 +239,7 @@ const USBParser: MetadataParser = {
 const StorageSizeParser: MetadataParser = {
     metadataKey: 'storage_size',
     parse(metadata: Record<string, string>): ParserOutput {
-        const storageSizeText = parseFirstValidValue(
+        const storageSizeText = parseFirstDefinedValue(
             metadata,
             [
                 'Main Feature >> Storage', 'Storage >> Storage', 'Storage >> ROM',
@@ -272,59 +277,71 @@ export const metadataParsers: MetadataParser[] = [
     StorageSizeParser,
 ];
 
-function fetchMinMaxValues(metadata: MetadataKey)  {
-    return knex('internal_products')
+/**
+ * Given a metadata key, fetch the minimum and maximum value for that metadata
+ * from the "external_products" table.
+ * @param metadata 
+ * @returns 
+ */
+function fetchMinMaxValuesForMetadata(metadata: keyof Metadata): Promise<{ min: number; max: number }> {
+    return knex('external_products')
         .select(
-            knex.raw('MIN((parsed_metadata ->> ?)::float) as min', [metadata]),
-            knex.raw('MAX((parsed_metadata ->> ?)::float) as max', [metadata]),
+            knex.raw('floor(MIN((parsed_metadata ->> ?)::float)) as min', [metadata]),
+            knex.raw('ceil(MAX((parsed_metadata ->> ?)::float)) as max', [metadata]),
         ).first();
 }
 
-function fetchUniqueStrings(metadata: MetadataKey) {
-    return knex('internal_products')
+/**
+ * Given a metadata key, fetch the unique string values for that metadata
+ * @param metadata 
+ * @returns 
+ */
+function fetchUniqueStringValuesForMetadata(metadata: keyof Metadata): Promise<{ value: string }[]> {
+    return knex('external_products')
         .select(
             knex.raw('DISTINCT(parsed_metadata ->> ?) as value', [metadata]),
         )
         .whereRaw('parsed_metadata ->> ? IS NOT NULL', [metadata]);
 }
 
-export async function metadataFilters() {
-    const filters = await Promise.all(Object.keys(MetadataDefinitions).map(async (key) => {
-        const metadataKey = key as MetadataKey;
-        const metadataProperty = MetadataDefinitions[metadataKey];
-        if (
-            metadataProperty?.dataType
-            && ['integer', 'float'].includes(metadataProperty.dataType)
-        ) {
-            const { min, max } = await fetchMinMaxValues(metadataKey);
-            return {
-                key: metadataKey,
-                displayName: metadataProperty.displayName,
-                unit: metadataProperty.unit,
-                type: 'range',
-                range: {
-                    min: min,
-                    max: max,
-                }
-            };
-            // Add a filter for number type
-        } else if (metadataProperty.dataType === 'boolean') {
-            return {
-                key: metadataKey,
-                displayName: metadataProperty.displayName,
-                unit: metadataProperty.unit,
-                type: 'boolean',
-            };
-        } else if (metadataProperty.dataType === 'string') {
-            const uniqueValues = await fetchUniqueStrings(metadataKey);
-            return {
-                key: metadataKey,
-                displayName: metadataProperty.displayName,
-                unit: metadataProperty.unit,
-                type: 'string',
-                values: uniqueValues.map((row) => row.value),
-            };
-        }
-    }));
+/**
+ * Generate a list of available metadata filters based on the metadata definitions.
+ * @returns 
+ */
+export async function generateAvailableMetadataFilters() {
+    const filters = await Promise.all(
+        Object.keys(MetadataDefinitions)
+        .filter(key => isMetadataKey(key))
+        .map(async (_key): Promise<MetadataFilterOutput | undefined> => {
+            const prop = MetadataDefinitions[_key];
+            if (prop.type === 'range') {
+                const { min, max } = await fetchMinMaxValuesForMetadata(prop.key);
+                return {
+                    key: prop.key,
+                    display_text: `${prop.displayName} (${prop.unit})`,
+                    unit: prop.unit,
+                    type: 'range',
+                    value: {
+                        min: min,
+                        max: max,
+                    },
+                };
+            } else if (prop.type === 'boolean') {
+                return {
+                    key: prop.key,
+                    display_text: prop.displayName,
+                    type: 'boolean',
+                };
+            } else if (prop.type === 'set') {
+                const uniqueValues = await fetchUniqueStringValuesForMetadata(prop.key);
+                return {
+                    key: prop.key,
+                    display_text: prop.displayName,
+                    type: 'set',
+                    value: uniqueValues.map((row) => row.value),
+                };
+            }
+        })
+    );
     return filters;
 }
