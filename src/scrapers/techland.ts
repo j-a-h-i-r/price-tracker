@@ -86,26 +86,25 @@ export class Techland extends BaseScraper {
         }
     }
 
-    private async fetchListingPageHtml(url: string, pageNumber: number, limit: number = 100): Promise<string> {
-        const pageUrl = `${url}?limit=${limit}&page=${pageNumber}`;
+    public async fetchListingPageHtml(url: string, pageNumber: number, limit: number = 100): Promise<string> {
+        const pageUrl = `${url}?page=${pageNumber}`;
         const req = await this.fetchWithThrottle(pageUrl);
         return req.body.text();
     }
 
     private parsePageCount(html: string): number {
         const $ = cheerio.load(html);
-        const lastPageLink = $('#content > div.main-products-wrapper > div.row.pagination-results > div.col-sm-6.text-left > ul > li:last-child > a').attr('href') ?? '';
-        const params = new URLSearchParams(lastPageLink.split('?')[1]);
-        if (!params.has('page')) {
-            logger.warn('No page parameter found in last page link');
-            return 1;
+        const lastPageNumber = $('nav[aria-label="Pagination"] > ul > li:nth-last-child(2) > button').text().trim();
+        if (!lastPageNumber) {
+            logger.warn('No pagination found in the listing page');
+            return 1; // Default to 1 if no pagination is found
         }
-        return Number(params.get('page'));
+        return Number(lastPageNumber);
     }
 
     private parsePageLinks(html: string): string[] {
         const $ = cheerio.load(html);
-        const cardDivs = $('#content > div.main-products-wrapper > div.main-products.product-grid > div > div > div.caption > div.name > a');
+        const cardDivs = $('#product-container > article > div:nth-child(2) > h3 > a');
         const pageLinks: string[] = [];
         cardDivs.each((i, div) => {
             const link = $(div).attr('href') ?? '';
@@ -114,41 +113,52 @@ export class Techland extends BaseScraper {
         return pageLinks;
     }
 
-    async parseProductPage(pageUrl: string): Promise<ScrapedProduct> {
+    async fetchProductPageHtml(pageUrl: string): Promise<string> {
         const req = await this.fetchWithThrottle(pageUrl);
-        const html = await req.body.text();
+        return req.body.text();
+    }
+
+    async parseProductPage(pageUrl: string): Promise<ScrapedProduct> {
+        const html = await this.fetchProductPageHtml(pageUrl);
         const $ = cheerio.load(html);
 
-        const productInfo: Record<string, string> = {};
-        $('#product > table > tbody:nth-child(3) > tr').each((i, el) => {
-            const key = $(el).children().first().text().trim();
-            const value = $(el).children().last().text().trim();
-            productInfo[key] = value;
-        });
+        const infoJsonText = $('head script[type="application/ld+json"]').text().trim();
+        if (!infoJsonText) {
+            logger.warn(`Not json data found in the product page: ${pageUrl}`);
+            throw new Error(`No JSON data found in the product page: ${pageUrl}`);
+        }
 
-        const specialPrice = productInfo['special price']?.replace(',', '').replace('৳', '');
-        const regularPrice = productInfo['product price']?.replace(',', '').replace('৳', '');
+        const infoJson = JSON.parse(infoJsonText);
+        if (!infoJson || !Array.isArray(infoJson) || infoJson.length === 0) {
+            logger.warn(`Invalid JSON data found in the product page: ${pageUrl}`);
+            throw new Error(`Invalid JSON data found in the product page: ${pageUrl}`);
+        }
+        const productData = infoJson[0];
+        const productName = productData.name;
+        
+        const specialPrice = productData.offers?.[0]?.price;
+        const price = specialPrice ? Number(specialPrice) : null;
 
-        const price = specialPrice ? Number(specialPrice) 
-            : (regularPrice ? Number(regularPrice) : null);
-
-        const availability = productInfo['Stock Status'] === 'In Stock';
-        const brand = productInfo['Brand'] ?? '';
+        const availability = productData.offers?.[0]?.availability === 'https://schema.org/InStock';
+        const brand = productData?.brand?.name;
 
         const specifications: Record<string, string> = {};
-        $('#tab-specification > div > table > tbody').each((_i, tbody) => {
-            const thead = $(tbody).prev();
-            const specGroup = thead.find('tr > td > strong').first().text().trim() ?? '';
+        $('#specification-tab > div > table > tbody').each((_i, tbody) => {
+            let specGroup = '';
             $(tbody).find('tr').each((_j, element) => {
+                if (_j === 0) {
+                    specGroup = $(element).children().first().text().trim();
+                    return;
+                }
                 const row = $(element);
                 const key = row.children().first().text().trim();
                 const value = row.children().last().text().trim();
-                specifications[`${specGroup} >> ${key}`] = value;
+                specifications[this.formatSpecKey(specGroup, key)] = value;
             });
         });
         
         return {
-            name: $('#product > table > caption > div > h1').text().trim(),
+            name: productName,
             price: price,
             isAvailable: availability,
             url: pageUrl,
