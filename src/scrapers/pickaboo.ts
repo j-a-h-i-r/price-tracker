@@ -128,7 +128,7 @@ export class Pickaboo extends BaseScraper {
         const regularPrice = productData?.productPrice;
         const specialPrice = productData?.productSpecialPrice;
         const price = specialPrice ? specialPrice : regularPrice;
-        const isAvailable = productData.stock_available ?? true;
+        const isAvailable = productData?.product?.stock_available ?? true;
 
         const productName = productData?.product?.name ?? $('h1.title').text().trim();
         const brand = productData?.product?.brand ?? $('div.brand-view > p > div > span').text().trim();
